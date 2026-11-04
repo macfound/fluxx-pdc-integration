@@ -31,8 +31,9 @@
 #             missing button isn't created
 #   granted   the ###PDC_CODE### block in GrantRequest's granted hook
 #             (added at the top of the hook if it isn't there)
-#   elements  the text and settings of PDC stencil elements already on a
-#             form; elements a chosen form lacks (Grant Request Themes, Grant
+#   elements  the text, settings and views (edit-only interactive
+#             component, detail-only read-only one) of PDC stencil elements
+#             already on a form; elements a chosen form lacks (Grant Request Themes, Grant
 #             Request Read-only Themes, and the PDC Grantee Profile's dashboard page) are added
 #             in a PDC group at the bottom, with the native fields they need,
 #             for the admin to move. A grant form with no PDC elements yet is
@@ -525,7 +526,8 @@ install = lambda do |log|
         next
       end
       text_ok = lib[:sha].call(text) == lib[:sha].call(spec['text'])
-      bad = lib[:element_config_problems].call(node, required_config)
+      views = (scope['stencil_elements'].find { |s| s['id'] == id } || {})['visibility']
+      bad = lib[:element_config_problems].call(node, required_config) + lib[:element_visibility_problems].call(node, views)
       if text_ok && bad.empty?
         log['ok'] << "#{id} @ stencil #{stencil_id} (#{st.name.to_s.strip})"
         next
@@ -533,6 +535,7 @@ install = lambda do |log|
       cfg = node['config']
       cfg['text'] = spec['text']
       required_config.each { |k, want| cfg[k] = want ? true : '0' unless lib[:truthy].call(cfg[k]) == want }
+      lib[:set_element_visibility].call(node, views)
       done << ['wrote element', "#{id} [#{[text_ok ? nil : 'text', *bad].compact.join(', ')}]"]
     end
     # The PDC Grantee Profiles on every PDC element, its group, and the native
@@ -558,7 +561,10 @@ install = lambda do |log|
     end
     f = plan_by_stencil[stencil_id]
     if f && (f['elements'].any? || f['fields'].any?)
-      kids = f['elements'].map { |id| lib[:new_element].call('text', f['model_type'], 'text' => specs.find { |s| s['id'] == id }['text'], 'profiles' => grantee_ids) }
+      kids = f['elements'].map do |id|
+        lib[:new_element].call('text', f['model_type'], 'text' => specs.find { |s| s['id'] == id }['text'], 'profiles' => grantee_ids,
+                               'visibility' => (scope['stencil_elements'].find { |s| s['id'] == id } || {})['visibility'])
+      end
       kids += f['fields'].map do |name|
         a = attrs_by_name[[f['model_type'], name]] || {}
         lib[:new_element].call('field', f['model_type'], 'name' => name, 'label' => a['description'] || name, 'profiles' => grantee_ids,

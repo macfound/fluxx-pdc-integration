@@ -292,6 +292,24 @@ lib[:element_config_problems] = lambda do |el, required|
   end
 end
 
+# Views an element must be in or out of (its scope "visibility": visible_form is
+# the edit view, visible_show the detail view) that it isn't, e.g.
+# ["visible_show is on, needs off"].
+lib[:element_visibility_problems] = lambda do |el, want|
+  vis = el['visibility'].is_a?(Hash) ? el['visibility'] : {}
+  (want || {}).reject { |k, w| lib[:truthy].call(vis[k]) == w }.map do |k, w|
+    "#{k} is #{lib[:truthy].call(vis[k]) ? 'on' : 'off'}, needs #{w ? 'on' : 'off'}"
+  end
+end
+
+# Puts an element in or out of the views its scope "visibility" names. Fluxx
+# leaves a view's key out when the element isn't shown there.
+lib[:set_element_visibility] = lambda do |el, want|
+  el['visibility'] = {} unless el['visibility'].is_a?(Hash)
+  (want || {}).each { |k, w| w ? el['visibility'][k] = true : el['visibility'].delete(k) }
+  el
+end
+
 # Saves a stencil's JSON and reads it back from the database: raises if what
 # was stored isn't what was written (e.g. truncated).
 lib[:write_stencil] = lambda do |stencil, raw|
@@ -357,7 +375,8 @@ lib[:locate_elements] = lambda do |scope, include_text = false|
           'parent_groups' => entry['parents'],
           'sha256' => lib[:sha].call(text),
           'sha256_decoded' => lib[:sha].call(decoded),
-          'config_problems' => lib[:element_config_problems].call(entry['element'], scope['element_required_config']),
+          'config_problems' => lib[:element_config_problems].call(entry['element'], scope['element_required_config']) +
+                               lib[:element_visibility_problems].call(entry['element'], specs.find { |s| s['id'] == id }['visibility']),
           'profiles' => lib[:profiles_of].call(entry['element'])
         }.merge(include_text ? { 'text' => text } : {})
         if entry['trail'].size > 1
@@ -448,6 +467,7 @@ lib[:new_element] = lambda do |kind, model_type, opts|
   base = { 'visibility' => vis, 'styling' => { 'alignment' => 'left' }, 'uid' => SecureRandom.uuid }
   case kind
   when 'text'
+    lib[:set_element_visibility].call(base, opts['visibility'])
     base.merge('element_type' => 'text', 'name' => 'text', 'config' => { 'text' => opts['text'], 'strip_html' => '0', 'allow_script' => true })
   when 'field'
     if opts['template'].is_a?(Hash)

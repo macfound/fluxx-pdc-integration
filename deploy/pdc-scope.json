@@ -64,12 +64,15 @@
     "dashboard": ["oauth-callback"]
   },
 
+  "_stencil_element_visibility": "An element's optional visibility says which views it must be in (true) or out of (false): visible_form is the edit view, visible_show the detail view. The interactive component is edit-only and the read-only one detail-only, so a grantee sees exactly one of them. Install sets these on every copy of the element; Validate reports a copy that differs as CONFIG_DIFFERS.",
   "stencil_elements": [
     { "id": "portal-style",               "path": "data-explorer/1. portal-style.html",          "host_model_types": ["GrantRequest"],    "include": ["<style", "pdc-floating-panel"],                                   "exclude": [] },
     { "id": "fluxx-card-api",             "path": "data-explorer/2. fluxxCardAPI.html",          "host_model_types": ["GrantRequest"],    "include": ["ACTIVE_CARD_SELECTOR"],                                          "exclude": [] },
     { "id": "oauth-client",               "path": "data-explorer/3. oauth.html",                 "host_model_types": ["GrantRequest"],    "include": ["codeVerifier"],                                                  "exclude": [] },
-    { "id": "stencil-container",          "path": "data-explorer/4. pdc-stencil-container.html", "host_model_types": ["GrantRequest"],    "include": ["pdc-auth-container", "pdc-launch-btn", "Review and Manage Consent"], "exclude": [] },
-    { "id": "stencil-container-readonly", "path": "data-explorer/4r. pdc-stencil-readonly.html", "host_model_types": ["GrantRequest"],   "include": ["pdc-auth-container", "Review and Manage Consent"],               "exclude": ["pdc-launch-btn"] },
+    { "id": "stencil-container",          "path": "data-explorer/4. pdc-stencil-container.html", "host_model_types": ["GrantRequest"],    "include": ["pdc-auth-container", "pdc-launch-btn", "Review and Manage Consent"], "exclude": [],
+      "visibility": { "visible_form": true, "visible_show": false } },
+    { "id": "stencil-container-readonly", "path": "data-explorer/4r. pdc-stencil-readonly.html", "host_model_types": ["GrantRequest"],   "include": ["pdc-auth-container", "Review and Manage Consent"],               "exclude": ["pdc-launch-btn"],
+      "visibility": { "visible_form": false, "visible_show": true } },
     { "id": "floating-panel",             "path": "data-explorer/5. floating-panel.html",        "host_model_types": ["GrantRequest"],    "include": ["_pdcInitBehavior"],                                              "exclude": [] },
     { "id": "oauth-callback",             "path": "data-explorer/oauth-callback.html",           "host_model_types": ["GenericTemplate"], "include": ["pdc_oauth_result", "window.close"],                               "exclude": ["codeVerifier"] }
   ]

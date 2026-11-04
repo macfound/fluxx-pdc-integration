@@ -59,7 +59,8 @@ The deploy model stays in place after install. To remove PDC completely, click
    - **PDC Staff Profile**: staff profiles allowed to see and edit the parts of the
      Consent form that are restricted (TRN: Employee with Permissions Plus)
    - **Grant Request Themes**: which grant themes show grantees the PDC component; each
-     chosen theme's forms get both the edit and the read-only component
+     chosen theme's forms get both the edit and the read-only component (the edit one
+     shows only in the edit view, the read-only one only in the detail view)
    - **PDC Environment**: Production or Sandbox, the PDC this instance talks to. Install
      writes the matching URL into the `Get PDC Base URL` method; to switch, change it and
      click Install again (with the other environment's credentials). While none is chosen,
@@ -125,6 +126,10 @@ that isn't `MATCH`.
   the `pdc_account_exists` field they read. The OAuth callback goes at the bottom of the
   first GenericTemplate on each **PDC Grantee Profile**'s dashboard. Move them where they belong afterwards; Install finds them by
   their markers wherever they are.
+- **Edit vs. detail view.** The edit component shows only in the edit view and the
+  read-only component only in the detail view, so a grantee never sees both. Install
+  sets this on every copy, including ones already on a form, and Validate reports a
+  copy in the wrong view as CONFIG_DIFFERS.
 - **Every active form of a chosen theme** gets the PDC component. Fluxx allows several
   enabled forms per theme (for example one per user profile), so a theme with an
   internal and an external form gets it on both; remove it from any form grantees don't

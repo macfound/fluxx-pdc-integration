@@ -128,6 +128,7 @@
         "oauth-callback"
       ]
     },
+    "_stencil_element_visibility": "An element's optional visibility says which views it must be in (true) or out of (false): visible_form is the edit view, visible_show the detail view. The interactive component is edit-only and the read-only one detail-only, so a grantee sees exactly one of them. Install sets these on every copy of the element; Validate reports a copy that differs as CONFIG_DIFFERS.",
     "stencil_elements": [
       {
         "id": "portal-style",
@@ -182,7 +183,11 @@
         ],
         "exclude": [
 
-        ]
+        ],
+        "visibility": {
+          "visible_form": true,
+          "visible_show": false
+        }
       },
       {
         "id": "stencil-container-readonly",
@@ -196,7 +201,11 @@
         ],
         "exclude": [
           "pdc-launch-btn"
-        ]
+        ],
+        "visibility": {
+          "visible_form": false,
+          "visible_show": true
+        }
       },
       {
         "id": "floating-panel",

@@ -15,7 +15,9 @@
 #   UNMARKED          PDC stencil element found by fingerprint, no PDC:ELEMENT marker yet
 #                     (content matches the repo)
 #   UNMARKED_DIFFERS  same, but the content differs from the repo copy
-#   CONFIG_DIFFERS    a PDC stencil element has Allow JavaScript off or strips HTML
+#   CONFIG_DIFFERS    a PDC stencil element has Allow JavaScript off or strips HTML, or
+#                     is in the wrong view (the interactive component belongs on
+#                     edit only, the read-only one on detail only)
 #   AMBIGUOUS         an element's fingerprints match more than one PDC element; needs a human
 #   DUPLICATE         the same PDC element appears more than once in one stencil
 #   NO_THEMES         an active Integration Map with no Grant Request Themes (no grant uses it)
