@@ -8,6 +8,8 @@
 #   MISSING           nothing with that name/key exists
 #   EXTRA             a live PDC record the manifest doesn't know about
 #   SKIPPED_SECRET    secret method; existence checked, body never compared
+#   NOT_CONFIGURED    secret method still holds its placeholder, or no PDC
+#                     Environment is chosen for Get PDC Base URL
 #   MARKER_NOT_FOUND  shared hook exists but has no ###PDC_CODE### block
 #   MISSING_ROLE / ROLE_DIFFERS  event has no role / not the pdc_event_role chosen here
 #   UNMARKED          PDC stencil element found by fingerprint, no PDC:ELEMENT marker yet
@@ -30,6 +32,8 @@ save_now = defined?(pdc_one_off) && pdc_one_off ? true : false
 record =
   begin
     manifest = (defined?(pdc_manifest) && pdc_manifest) || lib[:fetch_repo_json].call(model, 'deploy/pdc-manifest.json')
+    # Get PDC Base URL is expected to hold the URL of the PDC Environment chosen here
+    lib[:apply_environment].call(manifest, model)
     # Validate with the scope the manifest was built from, so fingerprints
     # and exclusions always agree with the hashes.
     live = lib[:collect].call(manifest['scope'], false)

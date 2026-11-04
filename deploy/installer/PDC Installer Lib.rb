@@ -728,12 +728,52 @@ lib[:selected_themes] = lambda do |deploy_model, attr|
   lib[:selected_values].call(deploy_model, attr).map { |v| ModelTheme.where(id: v.to_i, deleted_at: nil).first }.compact
 end
 
+# Which PDC this instance talks to. The admin chooses it in the deploy model's
+# PDC Environment field (options from PDC Populate Options); Install writes the
+# matching URL into Get PDC Base URL. Nothing else in Fluxx says whether an
+# instance is production or a sandbox.
+lib[:pdc_environments] = {
+  'production' => { 'label' => 'Production', 'url' => 'https://api.philanthropydatacommons.org' },
+  'sandbox'    => { 'label' => 'Sandbox',    'url' => 'https://api.sandbox.philanthropydatacommons.org' }
+}
+lib[:base_url_method] = 'Get PDC Base URL'
+
+# The whole Get PDC Base URL body for one URL. The repo copy
+# (pdc-map/pdc-integration-map/Get PDC Base URL.rb) is this with the sandbox URL.
+lib[:base_url_body] = lambda do |url|
+  "# Get PDC Base URL\n" \
+  "# Which PDC this Fluxx instance talks to. Written by the PDC installer from the\n" \
+  "# PDC Environment chosen on the PDC deploy record: to switch between Production\n" \
+  "# and Sandbox, change it there and click Install. Edits made here are\n" \
+  "# overwritten by the next Install.\n" \
+  "#{url.inspect}"
+end
+
+# Points a bundle's or manifest's Get PDC Base URL entry at the environment
+# chosen on deploy_model: its body (bundle) and body_sha256 (manifest). With
+# none chosen the entry is flagged environment_missing, so Install leaves the
+# method as it is and Validate reports NOT_CONFIGURED.
+lib[:apply_environment] = lambda do |components, deploy_model|
+  entry = Array(components['methods']).find { |m| m['name'] == lib[:base_url_method] }
+  next components if entry.nil?
+  env = lib[:selected_values].call(deploy_model, :pdc_environment).map { |v| lib[:pdc_environments][v] }.compact.first
+  if env.nil?
+    entry['environment_missing'] = true
+    next components
+  end
+  body = lib[:base_url_body].call(env['url'])
+  entry['body'] = body if entry.key?('body')
+  entry['body_sha256'] = lib[:sha].call(body) if entry.key?('body_sha256')
+  components
+end
+
 # Returns report rows: { kind, key, status, detail }.
 # Statuses: MATCH, DIFFERS, MISSING, EXTRA, SKIPPED_SECRET, MARKER_NOT_FOUND,
 # MISSING_ROLE, ROLE_DIFFERS, PROFILE_DIFFERS, UNMARKED, UNMARKED_DIFFERS,
 # CONFIG_DIFFERS, AMBIGUOUS, DUPLICATE.
 lib[:validate] = lambda do |manifest, live, deploy_model|
-  # (statuses also include NOT_CONFIGURED: a secret method still holding its placeholder)
+  # (statuses also include NOT_CONFIGURED: a secret method still holding its
+  # placeholder, or Get PDC Base URL with no PDC Environment chosen)
   rows = []
   row = lambda { |kind, key, status, detail = nil| rows << { 'kind' => kind, 'key' => key, 'status' => status, 'detail' => detail }.compact }
   wanted_roles = lib[:selected_roles].call(deploy_model, :pdc_event_role).map(&:name).sort
@@ -751,6 +791,10 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
       l = by_key[key]
       if l.nil?
         row.call(kind, key, 'MISSING')
+        next
+      end
+      if m['environment_missing']
+        row.call(kind, key, 'NOT_CONFIGURED', ['no PDC Environment chosen on the deploy record: choose Production or Sandbox, then Install'])
         next
       end
       if m['secret']

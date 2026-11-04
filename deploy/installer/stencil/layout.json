@@ -12,6 +12,7 @@
       { "field": "pdc_grantee_profile", "label": "Grantee profile", "config": { "select_type": "multiple-select-transfer checkboxes", "enable_percentage_slider": "0", "allow_percent": "0", "disable_validation_100_totals": "0", "searchable_ui": "0", "allow_only_deepest_selection": "0" } },
       { "field": "pdc_staff_profile",   "label": "Staff profile", "config": { "select_type": "multiple-select-transfer checkboxes", "enable_percentage_slider": "0", "allow_percent": "0", "disable_validation_100_totals": "0", "searchable_ui": "0", "allow_only_deepest_selection": "0" } },
       { "field": "grant_request_themes", "label": "Grant Request themes that show grantees the PDC component", "config": { "select_type": "multiple-select-transfer checkboxes", "enable_percentage_slider": "0", "allow_percent": "0", "disable_validation_100_totals": "0", "searchable_ui": "0", "allow_only_deepest_selection": "0" } },
+      { "field": "pdc_environment",         "label": "PDC Environment (Production or Sandbox; Install writes it into Get PDC Base URL)" },
       { "field": "pdc_client_id_input",     "label": "PDC Client ID (from the PDC; applied when you save, then cleared)" },
       { "field": "pdc_client_secret_input", "label": "PDC Client Secret (from the PDC; applied when you save, then cleared)" }
     ] },

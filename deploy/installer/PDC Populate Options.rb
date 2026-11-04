@@ -11,6 +11,8 @@
 #   installer_role       <- Role: who may click the deploy model's own buttons
 #   grant_request_themes <- GrantRequest themes whose forms get
 #                           the PDC elements (interactive / read-only set)
+#   pdc_environment      <- Production / Sandbox (fixed, from PDC Installer
+#                           Lib): which PDC Install points Get PDC Base URL at
 # Profile names differ per org, so the admin chooses; profiles whose
 # categories include "grantee" are labelled to help.
 # Options for deleted records are retired, not removed. Safe to re-run. Only
@@ -61,5 +63,8 @@ end
 
 themes = ModelTheme.where(model_type: 'GrantRequest', deleted_at: nil).order(:name).map { |t| [t.id, t.name] }
 
+environments = model.dyn_invoke_for(:"PDC Installer Lib")[:pdc_environments].map { |value, env| [value, env['label']] }
+
 [sync.call('installer_role', roles), sync.call('pdc_event_role', roles), sync.call('pdc_grantee_profile', profiles),
- sync.call('pdc_staff_profile', profiles), sync.call('grant_request_themes', themes)].join('; ')
+ sync.call('pdc_staff_profile', profiles), sync.call('grant_request_themes', themes),
+ sync.call('pdc_environment', environments)].join('; ')

@@ -1870,7 +1870,7 @@
       "model_type": "MacModelTypeDynPdcApplicationForm1",
       "name": "Get PDC Base URL",
       "method_type": "method",
-      "body": "# Get PDC Base URL\n\ndashboard_config = ClientConfiguration.find_by_id(47)\nreturn \"https://api.philanthropydatacommons.org\" unless dashboard_config\n\nbegin\n  dashboard_title = JSON.parse(dashboard_config.configuration).dig(\"application\", \"dashboard_title\")\n\n  if dashboard_title && !dashboard_title.include?(\"[\")\n    \"https://api.philanthropydatacommons.org\"\n  else\n    \"https://api.sandbox.philanthropydatacommons.org\"\n  end\nrescue\n  \"https://api.sandbox.philanthropydatacommons.org\"\nend\n"
+      "body": "# Get PDC Base URL\n# Which PDC this Fluxx instance talks to. Written by the PDC installer from the\n# PDC Environment chosen on the PDC deploy record: to switch between Production\n# and Sandbox, change it there and click Install. Edits made here are\n# overwritten by the next Install.\n\"https://api.sandbox.philanthropydatacommons.org\"\n"
     },
     {
       "key": "MacModelTypeDynPdcApplicationForm1#Get PDC Client ID",

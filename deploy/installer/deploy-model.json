@@ -16,6 +16,7 @@
     { "name": "restore_results",   "description": "Restore Results",   "attribute_type": "text" },
     { "name": "installer_results", "description": "Installer Results", "attribute_type": "text" },
     { "name": "credentials_results", "description": "Credentials Results", "attribute_type": "text" },
+    { "name": "pdc_environment",   "description": "PDC Environment",   "attribute_type": "multi_value", "multi_allowed": false },
     { "name": "pdc_client_id_input",     "description": "PDC Client ID",     "attribute_type": "string" },
     { "name": "pdc_client_secret_input", "description": "PDC Client Secret", "attribute_type": "string" },
     { "name": "previous_configuration", "description": "Previous Configuration", "attribute_type": "text" },

@@ -80,8 +80,8 @@ choice to drop that word would. Keep "decline" in the negative option's label.
 - [ ] `3. oauth.html`: confirm client ID (`pdc-fluxx-macfound`) and auth
       endpoints match the target environment; register `oauth-callback.html`'s
       URL as the redirect URI with PDC.
-- [ ] `Get PDC Base URL.rb`: confirm `ClientConfiguration` id 47 exists in the
-      target instance (environment detection depends on it).
+- [ ] Deploy record: choose the **PDC Environment** (Production or Sandbox) and
+      click Install, which writes the matching URL into `Get PDC Base URL`.
 - [ ] `CurrentConsentLanguage.rb`: the Q&A link is a placeholder
       (`https://yoursite.invalid/pdc-consent-qa`) and the contact address is
       MacArthur's; point both at your own consent Q&A and contact before going live.

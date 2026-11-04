@@ -49,7 +49,7 @@ PDC Consent model
   Data Shared.liquid ──► PDC_Get_Data_Preview_For_Proposal
 
 PDC Integration Map model — foundations used by nearly everything:
-  Get PDC Base URL          (env detection via ClientConfiguration id 47)
+  Get PDC Base URL          (written by Install from the deploy record's PDC Environment)
   Get Auth Token from PDC   (client-credentials token, cached on the record)
     ├─► Get PDC Client Secret
     └─► (client IDs currently inline / in Get PDC Client ID methods)
@@ -91,9 +91,6 @@ kept byte-identical to what is deployed/tested):
 
 - `grant-request/PDC_Get_PDC_Field_Mapping.rb` — uses `.first` map record;
   selection logic TODO is documented in the file header.
-- `pdc-integration-map/Get PDC Base URL.rb` — environment detection depends on
-  `ClientConfiguration` record id 47 existing and on the dashboard title
-  containing `[` in non-production; without record 47 it uses the production API.
 - `pdc-consent/CurrentConsentLanguage.rb` — the Q&A link is a placeholder
   (`yoursite.invalid`), and the contact address and "the Foundation" wording are
   MacArthur's.
@@ -157,9 +154,14 @@ dashboard: UserProfile (`categories`, a JSON string, includes `"grantee"`) →
 TRN has two grantee-category profiles (Grantee 77, Borrower 1779), so the
 profile has to be chosen, not guessed.
 
-**Ids hard-coded in methods.** `Get PDC Base URL` reads `ClientConfiguration` 47,
-which differs per instance. `CurrentConsentLanguage`'s Q&A link is a placeholder to
-replace per instance.
+**Environment.** Whether an instance talks to the production or the sandbox PDC
+is the deploy record's **PDC Environment** field. Install writes the matching URL
+into `Get PDC Base URL` (the repo copy holds the sandbox URL), and Validate
+compares the method against the chosen environment; with none chosen, Install
+leaves the method alone and Validate reports it NOT_CONFIGURED.
+
+**Per-instance placeholders.** `CurrentConsentLanguage`'s Q&A link is a
+placeholder to replace per instance.
 
 **Secrets.** `Get PDC Client ID` and `Get PDC Client Secret` hold real
 credentials in Fluxx and placeholders in the repo. They are never exported or

@@ -60,6 +60,10 @@ The deploy model stays in place after install. To remove PDC completely, click
      Consent form that are restricted (TRN: Employee with Permissions Plus)
    - **Grant Request Themes**: which grant themes show grantees the PDC component; each
      chosen theme's forms get both the edit and the read-only component
+   - **PDC Environment**: Production or Sandbox, the PDC this instance talks to. Install
+     writes the matching URL into the `Get PDC Base URL` method; to switch, change it and
+     click Install again (with the other environment's credentials). While none is chosen,
+     Install leaves that method alone and Validate reports it NOT_CONFIGURED
    - **PDC Client ID** / **PDC Client Secret**: the credentials the PDC issued you. Type
      them in and save: they're written into the `Get PDC Client ID` / `Get PDC Client
      Secret` methods on the PDC Integration Map (run Install first, so it exists) and the

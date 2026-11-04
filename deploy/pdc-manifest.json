@@ -714,7 +714,7 @@
       "model_type": "MacModelTypeDynPdcApplicationForm1",
       "name": "Get PDC Base URL",
       "method_type": "method",
-      "body_sha256": "8d10d848cc08e486787363eae1435ab140fbdb6b30819ce8ec2bcb3fcd09627a",
+      "body_sha256": "4ad57da19d7823fe29be83cf807419f7ccc2f44473c1b148aad76deef145df47",
       "body_path": "pdc-map/pdc-integration-map/Get PDC Base URL.rb"
     },
     {

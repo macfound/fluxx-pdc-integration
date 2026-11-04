@@ -21,7 +21,9 @@
 #   fields    restore/create fields and static dropdown options; a field
 #             whose type or settings differ is only reported (changing a field
 #             under existing data is unsafe)
-#   methods   restore/create/overwrite (secret methods are never written)
+#   methods   restore/create/overwrite (secret methods are never written;
+#             Get PDC Base URL is written for the PDC Environment chosen
+#             here, and left alone while none is chosen)
 #   states    restore/create/overwrite settings and hooks
 #   buttons   restore/create/overwrite target, from-states, guard, filter;
 #             a button with no role gets the PDC Event Role chosen here (else
@@ -50,6 +52,8 @@ require 'securerandom'
 lib = model.dyn_invoke_for(:"PDC Installer Lib") unless defined?(lib) && lib
 # A pasted test script embeds the bundle and sets pdc_one_off.
 bundle = (defined?(pdc_bundle) && pdc_bundle) || lib[:fetch_repo_json].call(model, 'deploy/pdc-install-bundle.json')
+# Get PDC Base URL gets the URL of the PDC Environment chosen on this record
+lib[:apply_environment].call(bundle, model)
 save_now = defined?(pdc_one_off) && pdc_one_off ? true : false
 
 plan = nil   # set below, before the run
@@ -351,6 +355,10 @@ install = lambda do |log|
       gone.deleted_at = nil
       gone.save!
       log['restored'] << m['key']
+      next
+    end
+    if m['environment_missing']
+      log['not written: choose a PDC Environment on this record, then Install again'] << m['key']
       next
     end
     want = { 'method_type' => m['method_type'], 'unsafe_dyn_method' => m['body'] }

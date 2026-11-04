@@ -158,7 +158,7 @@ Common maintenance tasks and how to handle them:
 | A single mapping is wrong | Edit it directly in the Show Mapped Fields view |
 | Mappings are out of order | Run the sort-by-position action |
 | Consent wording needs to change | Coordinate with Legal; update the consent configuration (not a mapping change) |
-| Switching environments (sandbox ↔ production) | This is a deployment/credentials change — see [`deployment.md`](deployment.md), not something you toggle per map |
+| Switching environments (sandbox ↔ production) | This is a deployment/credentials change: change PDC Environment and the credentials on the PDC deploy record, then click Install — see [`deployment.md`](deployment.md). Not something you toggle per map |
 
 > **"Update Field Mapping" is safe to re-run.** It won't overwrite Fluxx-side
 > mappings you've already set — it skips fields that already have a mapping. Its
