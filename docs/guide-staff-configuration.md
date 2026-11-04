@@ -129,6 +129,18 @@ The Show Mapped Fields view flags each mapping with a **✓** when all four part
 are filled and a **⚠** when something is missing — use that to spot incomplete
 mappings at a glance.
 
+A mapping can also show a yellow warning under it, about what it will send:
+
+- **"… is a User: this sends its Fluxx ID"** — the Fluxx field is a record (a
+  user, an organization, …). Without a **Fluxx Related Field - Field Name** the
+  record's Fluxx ID is sent, which is right when the PDC asks for an ID. To send
+  something else, name the record's field there, e.g. `full_name` or `name`.
+- **"… has no field …"** — the related field (or the Fluxx field itself) doesn't
+  exist, usually a typo.
+
+Sending never stops because of one field: a field with no data in a grant is
+sent empty, and the proposal is still created.
+
 **Option B — Generate from the selected PDC application form (if one already exists at the PDC).**
 Run the **"Update Field Mapping from Selected Application"** action. This reads
 the fields defined on the PDC application form you selected and, for each one:

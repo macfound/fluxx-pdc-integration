@@ -189,53 +189,12 @@ field_mappings.each do |mapping|
 	app_form_field_id = app_form_fields[pdc_field_code]
 	next if app_form_field_id.nil?
 
-	# Extract value from the grant request
-	field_value = nil
-
-	# logger << "Mapping PDC field '#{pdc_field_code}' to Fluxx field '#{fluxx_field_code}' (App Form Field ID: #{app_form_field_id})"
-
-	if fluxx_field_code =~ /^(\w+)\s*\((core|dynamic)\):\s*(.+?)(?:\s*\[.+?\])?$/
-      model_type = $1
-      field_type = $2
-      field_label = $3.strip
-
-      # Convert label to field name
-      field_name = field_label.downcase.gsub(/[\s\-]+/, '_')
-
-	#   logger << "  Model Type: #{model_type}, Field Type: #{field_type}, Field Label: #{field_label}, Field Name: #{field_name}"
-
-      case model_type
-		when "Organization"
-			if model.program_organization.present?
-				if model.program_organization.respond_to?(field_name)
-					field_value = model.program_organization.send(field_name)
-					# logger << "  Retrieved value from Program Organization: #{field_value.inspect}"
-				end
-			end
-
-		when "GrantRequest"
-			if model.respond_to?(field_name)
-				field_value = model.send(field_name)
-				# logger << "  Retrieved value from GrantRequest: #{field_value.inspect}"
-			end
-      	end
-    end
-
-    # If value is an object and we have a subfield defined, extract it
-    if field_value.present? &&
-      field_value.respond_to?(:attributes) &&
-      mapping.fluxx_related_field_field_name.present?
-
-	#   logger << "  Extracting subfield '#{mapping.fluxx_related_field_field_name}' from object"
-      sub_field = mapping.fluxx_related_field_field_name
-      if field_value.respond_to?(sub_field)
-        field_value = field_value.send(sub_field)
-		# logger << "  Extracted subfield value: #{field_value.inspect}"
-      end
-    end
-
-	# Convert value to string and skip if blank
-	field_value_str = field_value.to_s.strip
+	# What this mapping sends for this grant: the Fluxx field, or its related
+	# field when it's a record; a record still left sends its Fluxx id, and an
+	# empty value nil (see Value For Grant on PDC Mapped Field). A field that
+	# can't be read sends nil too: one field never stops the proposal.
+	mapping.instance_variable_set(:@pdc_grant, model)
+	field_value_str = (mapping.dyn_invoke_for(:"Value For Grant") rescue nil)
 
 	field_values << {
 		applicationFormFieldId: app_form_field_id,

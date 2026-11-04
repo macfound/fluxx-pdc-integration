@@ -1,6 +1,7 @@
 <br><br><a title="Add a Fields Mapped From Fluxx to PDC" class="to-modal pdc-add-mapping-btn" data-on-success="refreshCaller,close" href="/machine_models/new?_force_set%5Bmachine_model%5Bpdc_mapping_field%5D%5D={{model.id}}&amp;child_model=1&amp;machine_model%5Bpdc_mapping_field%5D={{model.id}}&amp;parent_model_class=MacModelTypeDynPdcApplicationForm1&amp;parent_model_id={{model.id}}&amp;type=MacModelTypeDynPdcMappedField1">Add a Field Mapping From Fluxx to PDC</a><br>
 
 {% assign sorted_fields = model.SortMappedFieldsbyFieldPosition %}
+{% assign mapping_warnings = model.Mapped_Field_Warnings %}
 
 <table class="pdc-mapped-fields">
   <colgroup>
@@ -67,6 +68,9 @@
                         <span class="field-value empty">Not set</span>
                       {% endif %}
                     </div>
+                    {% assign warning_key = field.id | append: '' %}
+                    {% assign field_warning = mapping_warnings[warning_key] %}
+                    {% if field_warning %}<div class="field-warning">&#9888; {{ field_warning | escape }}</div>{% endif %}
                   </div>
                 </td>
               </tr>
@@ -232,6 +236,15 @@
     word-break: break-word;
   }
   
+  .pdc-mapped-fields .field-warning {
+    margin-top: 6px;
+    padding: 6px 8px;
+    background: #fff8e1;
+    border-left: 3px solid #f0ad4e;
+    color: #6d4c00;
+    font-size: 12px;
+  }
+
   .pdc-mapped-fields .field-value.empty {
     color: #999;
     font-style: italic;
