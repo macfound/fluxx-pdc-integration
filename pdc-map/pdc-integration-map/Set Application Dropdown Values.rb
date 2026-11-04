@@ -31,25 +31,26 @@ errors = []
 applications.each do |app|
   app_id = app['id'].to_s
   opportunity_id = app['opportunityId'].to_s
-  
+
   # Skip if missing required data
   if app_id.blank?
     errors << "Skipping application with missing ID"
     skipped_count += 1
     next
   end
-  
+
   # Create display text with parseable opportunity ID
   # Format: "Application #ID (Opp: OPPORTUNITY_ID, v.VERSION)"
   version = app['version'] || 'unknown'
   display_text = "Application ##{app_id} (Opp: #{opportunity_id}, v.#{version})"
-  
+
   # Check if value exists (including soft-deleted)
   existing_value = ModelAttributeValue.unscoped.find_by(
     model_attribute_id: application_attribute.id,
-    value: app_id
+    value: app_id,
+    deleted_at: nil
   )
-  
+
   if existing_value
     if existing_value.deleted_at.present?
       # Restore soft-deleted record and update description
