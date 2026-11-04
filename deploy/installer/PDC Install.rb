@@ -501,6 +501,8 @@ install = lambda do |log|
   plan_by_stencil = missing_models.empty? ? plan['forms'].each_with_object({}) { |f, h| h[f['stencil_id']] = f } : {}
   plan['notes'].each { |n| log['note'] << n } if missing_models.empty?
   group_label = (scope['placement'] || {})['group_label'] || 'PDC'
+  # Forms whose PDC elements go without the PDC group (the dashboard page)
+  bare_types = Array((scope['placement'] || {})['bare_model_types'])
   attrs_by_name = bundle['attributes'].each_with_object({}) { |a, h| h[[a['model_type'], a['name']]] = a }
   gr_type = scope['grant_request']['model_type']
   # Who sees the PDC pieces: the PDC Grantee Profiles chosen on this record
@@ -559,6 +561,25 @@ install = lambda do |log|
         set_profiles.call(node_at.call(e['trail']), "field #{e['element']['name']}")
       end
     end
+    # On a bare form, a PDC group holding PDC elements is replaced by its
+    # contents, so grantees see no container (after the profiles above, which
+    # find elements by position)
+    if bare_types.include?(st.model_type)
+      unwrap = lambda do |els|
+        Array(els).flat_map do |el|
+          next [el] unless el.is_a?(Hash)
+          label = el['config'].is_a?(Hash) ? el['config']['label'] : nil
+          if el['element_type'] == 'group' && label.to_s.strip == group_label && JSON.generate(el).include?('PDC:ELEMENT')
+            done << ['removed the PDC group around PDC elements (no container on the page)', "group of #{Array(el['elements']).size}"]
+            unwrap.call(el['elements'])
+          else
+            el['elements'] = unwrap.call(el['elements']) if el['elements'].is_a?(Array)
+            [el]
+          end
+        end
+      end
+      doc['elements'] = unwrap.call(doc['elements'])
+    end
     f = plan_by_stencil[stencil_id]
     if f && (f['elements'].any? || f['fields'].any?)
       kids = f['elements'].map do |id|
@@ -570,7 +591,8 @@ install = lambda do |log|
         lib[:new_element].call('field', f['model_type'], 'name' => name, 'label' => a['description'] || name, 'profiles' => grantee_ids,
                                'template' => (scope['stencil_field_templates'] || {})["#{f['model_type']}.#{name}"])
       end
-      doc['elements'] = Array(doc['elements']) + [lib[:new_element].call('group', f['model_type'], 'label' => group_label, 'elements' => kids, 'profiles' => grantee_ids)]
+      doc['elements'] = Array(doc['elements']) +
+                        (bare_types.include?(f['model_type']) ? kids : [lib[:new_element].call('group', f['model_type'], 'label' => group_label, 'elements' => kids, 'profiles' => grantee_ids)])
       (f['elements'] + f['fields'].map { |n| "field #{n}" }).each { |what| done << ['added to form (bottom; move it where it belongs)', what] }
     end
     next if done.empty?

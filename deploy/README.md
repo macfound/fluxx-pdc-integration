@@ -95,7 +95,7 @@ The deploy model stays in place after install. To remove PDC completely, click
    | `MISSING_ROLE` / `ROLE_DIFFERS` | Integration Map button has no role, or not the chosen one |
    | `UNMARKED` | PDC stencil element recognized by fingerprint but lacking its `PDC:ELEMENT` marker (Install adds it) |
    | `UNMARKED_DIFFERS` | Same as `UNMARKED`, but the element's content also differs from the repo copy |
-   | `CONFIG_DIFFERS` | A PDC stencil element has Allow JavaScript off, or strips HTML (its scripts won't run), or is in the wrong view |
+   | `CONFIG_DIFFERS` | A PDC stencil element has Allow JavaScript off, or strips HTML (its scripts won't run), is in the wrong view, or sits in the PDC group on the dashboard page |
    | `PROFILE_DIFFERS` | A profile restriction doesn't match the deploy record's choices: Consent permissions or the PDC elements, group and field on grant forms and the dashboard page (PDC Grantee Profiles), or the restricted parts of the PDC models' forms (PDC Staff Profiles). Install fixes it. |
    | `ROLE_DIFFERS` (installer buttons) | One of the deploy model's own buttons doesn't have exactly the Installer Roles; Update Installer fixes it |
    | `AMBIGUOUS` | An element's fingerprints match more than one PDC element; needs a person to look |
@@ -124,7 +124,8 @@ that isn't `MATCH`.
 - **PDC elements** go in a PDC group at the bottom of the grant forms of each theme
   chosen in **Grant Request Themes**: the edit component, the read-only component, and
   the `pdc_account_exists` field they read. The OAuth callback goes at the bottom of the
-  first GenericTemplate on each **PDC Grantee Profile**'s dashboard. Move them where they belong afterwards; Install finds them by
+  first GenericTemplate on each **PDC Grantee Profile**'s dashboard, on its own (no PDC group, so grantees see no
+  container; Install takes it out of one if it's there). Move them where they belong afterwards; Install finds them by
   their markers wherever they are.
 - **Edit vs. detail view.** The edit component shows only in the edit view and the
   read-only component only in the detail view, so a grantee never sees both. Install

@@ -113,7 +113,7 @@
         "label": "Do you already have an organizational account setup with the PDC?"
       }
     },
-    "_placement": "Where Install adds PDC elements that aren't on a form yet, in this order, inside a group with group_label at the bottom of the form: interactive (the edit and the read-only component) to the forms of each theme chosen in Grant Request Themes, dashboard to the first GenericTemplate on the PDC Grantee Profile's dashboard. Admins move them afterwards.",
+    "_placement": "Where Install adds PDC elements that aren't on a form yet, in this order, at the bottom of the form (inside a group with group_label, except on bare_model_types): interactive (the edit and the read-only component) to the forms of each theme chosen in Grant Request Themes, dashboard to the first GenericTemplate on the PDC Grantee Profile's dashboard. Admins move them afterwards.",
     "placement": {
       "group_label": "Contribute to the Philanthropy Data Commons (PDC)",
       "interactive": [
@@ -126,6 +126,10 @@
       ],
       "dashboard": [
         "oauth-callback"
+      ],
+      "_bare_model_types": "Forms of these model types get PDC elements without the PDC group: the grantee dashboard page's OAuth callback only runs script, and a group would show grantees an empty container. Install adds them bare and takes them out of a PDC group already there.",
+      "bare_model_types": [
+        "GenericTemplate"
       ]
     },
     "_stencil_element_visibility": "An element's optional visibility says which views it must be in (true) or out of (false): visible_form is the edit view, visible_show the detail view. The interactive component is edit-only and the read-only one detail-only, so a grantee sees exactly one of them. Install sets these on every copy of the element; Validate reports a copy that differs as CONFIG_DIFFERS.",

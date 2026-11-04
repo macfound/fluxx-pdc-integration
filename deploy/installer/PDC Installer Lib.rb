@@ -931,6 +931,7 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
   live_elements = {}
   Array(live['stencil_elements']).each { |l| live_elements[l['key']] = l }
   gr_type = manifest['scope']['grant_request']['model_type']
+  placement = manifest['scope']['placement'] || {}
   Array(manifest['stencil_elements']).each do |m|
     # Switched-off grant forms are rollbacks Install never changes, so they're
     # left out: they keep whatever the form had when Install copied it
@@ -943,6 +944,9 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
       where = "#{m['key']} @ stencil #{stencil_id} (#{here.first['stencil_name']})"
       here.each do |loc|
         problems = Array(loc['config_problems'])
+        if Array(placement['bare_model_types']).include?(loc['model_type']) && Array(loc['parent_groups']).map { |g| g.to_s.strip }.include?(placement['group_label'])
+          problems += ['inside the PDC group, which shows grantees an empty container (Install takes it out)']
+        end
         row.call('stencil_elements', where, 'CONFIG_DIFFERS', problems) if problems.any?
       end
       groups = here.map { |loc| loc['parent_groups'] }.uniq
