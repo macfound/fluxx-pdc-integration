@@ -71,6 +71,12 @@ field_mappings.each do |mapping|
     # still a whole record means the mapping names no field of it to send.
     value_text = value.to_s.strip
     record = !value.nil? && value.respond_to?(:attributes)
+    if record
+      kind = value.class.name.demodulize
+      sub = mapping.fluxx_related_field_field_name.to_s.strip
+      record_note = sub.empty? ? "(a #{kind} record: set this field's Fluxx Related Field - Field Name)" :
+                                 "(a #{kind} record with no field \"#{sub}\": check this field's Fluxx Related Field - Field Name)"
+    end
 
     # Store in hash using raw field name for API compatibility
     pdc_data[raw_pdc_field] = value_text
@@ -78,7 +84,7 @@ field_mappings.each do |mapping|
     # Store clean info for display (use string keys for Liquid compatibility)
     field_info << {
       "field_name" => clean_pdc_field,
-      "value" => record ? "(a #{value.class.name.demodulize} record: choose which of its fields to send in this field's mapping)" : value_text,
+      "value" => record ? record_note : value_text,
       "source" => model_type || "Unknown",
       "has_value" => value_text != ""
     }
