@@ -835,7 +835,7 @@ end
 # Returns report rows: { kind, key, status, detail }.
 # Statuses: MATCH, DIFFERS, MISSING, EXTRA, SKIPPED_SECRET, MARKER_NOT_FOUND,
 # MISSING_ROLE, ROLE_DIFFERS, PROFILE_DIFFERS, UNMARKED, UNMARKED_DIFFERS,
-# CONFIG_DIFFERS, SKIPPED_SWITCHED_OFF, AMBIGUOUS, DUPLICATE.
+# CONFIG_DIFFERS, AMBIGUOUS, DUPLICATE.
 lib[:validate] = lambda do |manifest, live, deploy_model|
   # (statuses also include NOT_CONFIGURED: a secret method still holding its
   # placeholder, or Get PDC Base URL with no PDC Environment chosen)
@@ -928,11 +928,13 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
   end
 
   reported_groups = {}
-  off_themes = {}   # themes with PDC elements on a switched-off grant form
   live_elements = {}
   Array(live['stencil_elements']).each { |l| live_elements[l['key']] = l }
+  gr_type = manifest['scope']['grant_request']['model_type']
   Array(manifest['stencil_elements']).each do |m|
-    locs = Array((live_elements[m['key']] || {})['locations'])
+    # Switched-off grant forms are rollbacks Install never changes, so they're
+    # left out: they keep whatever the form had when Install copied it
+    locs = Array((live_elements[m['key']] || {})['locations']).reject { |loc| !loc['enabled'] && loc['model_type'] == gr_type }
     if locs.empty?
       row.call('stencil_elements', m['key'], 'MISSING')
       next
@@ -941,14 +943,7 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
       where = "#{m['key']} @ stencil #{stencil_id} (#{here.first['stencil_name']})"
       here.each do |loc|
         problems = Array(loc['config_problems'])
-        next if problems.empty?
-        # Install never changes a switched-off grant form (it's a rollback)
-        if !loc['enabled'] && loc['model_type'] == manifest['scope']['grant_request']['model_type']
-          row.call('stencil_elements', where, 'SKIPPED_SWITCHED_OFF', ['switched-off grant form (a rollback), so Install leaves it alone'] + problems)
-          off_themes[loc['model_theme_id']] = true
-        else
-          row.call('stencil_elements', where, 'CONFIG_DIFFERS', problems)
-        end
+        row.call('stencil_elements', where, 'CONFIG_DIFFERS', problems) if problems.any?
       end
       groups = here.map { |loc| loc['parent_groups'] }.uniq
       if grantee_ids.any?
@@ -980,21 +975,6 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
         row.call('stencil_elements', where, 'DIFFERS', ['body'])
       end
     end
-  end
-
-  # Every form of a theme whose PDC elements sit on a switched-off form, with
-  # its raw enabled value, so it's clear which form Fluxx is showing
-  off_themes.each_key do |theme_id|
-    theme = ModelTheme.find_by(id: theme_id)
-    forms = Stencil.where(model_theme_id: theme_id, deleted_at: nil).order(:id).map do |st|
-      raw = st['json'].to_s
-      parsed = (JSON.parse(raw) rescue nil)
-      els = lib[:stencil_elements].call(raw)
-      "#{st.id} #{st.name.to_s.strip.inspect}: enabled=#{st.enabled.inspect}, form types #{lib[:form_types].call(st).join('/')}, " \
-      "json #{raw.size} chars (#{parsed.class}), #{els.size} elements (#{els.count { |e| lib[:element_text].call(e['element']) }} with text), " \
-      "PDC:ELEMENT x#{raw.scan('PDC:ELEMENT').size}, pdc-launch-btn x#{raw.scan('pdc-launch-btn').size}, updated #{st.updated_at}"
-    end
-    row.call('forms', "theme #{theme ? theme.name : theme_id}", 'NOTE', forms)
   end
 
   rows

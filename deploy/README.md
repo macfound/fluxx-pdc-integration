@@ -96,7 +96,6 @@ The deploy model stays in place after install. To remove PDC completely, click
    | `UNMARKED` | PDC stencil element recognized by fingerprint but lacking its `PDC:ELEMENT` marker (Install adds it) |
    | `UNMARKED_DIFFERS` | Same as `UNMARKED`, but the element's content also differs from the repo copy |
    | `CONFIG_DIFFERS` | A PDC stencil element has Allow JavaScript off, or strips HTML (its scripts won't run), or is in the wrong view |
-   | `SKIPPED_SWITCHED_OFF` | The same, on a switched-off grant form (a rollback); Install never changes those |
    | `PROFILE_DIFFERS` | A profile restriction doesn't match the deploy record's choices: Consent permissions or the PDC elements, group and field on grant forms and the dashboard page (PDC Grantee Profiles), or the restricted parts of the PDC models' forms (PDC Staff Profiles). Install fixes it. |
    | `ROLE_DIFFERS` (installer buttons) | One of the deploy model's own buttons doesn't have exactly the Installer Roles; Update Installer fixes it |
    | `AMBIGUOUS` | An element's fingerprints match more than one PDC element; needs a person to look |
@@ -130,8 +129,8 @@ that isn't `MATCH`.
 - **Edit vs. detail view.** The edit component shows only in the edit view and the
   read-only component only in the detail view, so a grantee never sees both. Install
   sets this on every copy, including ones already on a form, and Validate reports a
-  copy in the wrong view as CONFIG_DIFFERS (SKIPPED_SWITCHED_OFF on a switched-off
-  grant form, which Install leaves alone).
+  copy in the wrong view as CONFIG_DIFFERS. Switched-off grant forms (the rollback
+  copies Install keeps) are never changed or checked.
 - **Every active form of a chosen theme** gets the PDC component. Fluxx allows several
   enabled forms per theme (for example one per user profile), so a theme with an
   internal and an external form gets it on both; remove it from any form grantees don't

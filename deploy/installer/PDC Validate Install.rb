@@ -18,12 +18,13 @@
 #   CONFIG_DIFFERS    a PDC stencil element has Allow JavaScript off or strips HTML, or
 #                     is in the wrong view (the interactive component belongs on
 #                     edit only, the read-only one on detail only)
-#   SKIPPED_SWITCHED_OFF  what would be CONFIG_DIFFERS, on a switched-off grant form
-#                     (a rollback), which Install never changes
 #   AMBIGUOUS         an element's fingerprints match more than one PDC element; needs a human
 #   DUPLICATE         the same PDC element appears more than once in one stencil
 #   NO_THEMES         an active Integration Map with no Grant Request Themes (no grant uses it)
 #   THEME_ON_SEVERAL_MAPS  a Grant Request Theme on more than one active Integration Map
+#
+# Switched-off grant forms are rollbacks that Install never changes, so their
+# PDC elements aren't checked.
 #
 # Saves the results to validate_results on this deploy model (rendered on the
 # card by the Results block via PDC_Results), and returns them. Read-only
