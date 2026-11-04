@@ -974,7 +974,12 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
   off_themes.each_key do |theme_id|
     theme = ModelTheme.find_by(id: theme_id)
     forms = Stencil.where(model_theme_id: theme_id, deleted_at: nil).order(:id).map do |st|
-      "#{st.id} #{st.name.to_s.strip.inspect}: enabled=#{st.enabled.inspect}, form types #{lib[:form_types].call(st).join('/')}"
+      raw = st['json'].to_s
+      parsed = (JSON.parse(raw) rescue nil)
+      els = lib[:stencil_elements].call(raw)
+      "#{st.id} #{st.name.to_s.strip.inspect}: enabled=#{st.enabled.inspect}, form types #{lib[:form_types].call(st).join('/')}, " \
+      "json #{raw.size} chars (#{parsed.class}), #{els.size} elements (#{els.count { |e| lib[:element_text].call(e['element']) }} with text), " \
+      "PDC:ELEMENT x#{raw.scan('PDC:ELEMENT').size}, pdc-launch-btn x#{raw.scan('pdc-launch-btn').size}, updated #{st.updated_at}"
     end
     row.call('forms', "theme #{theme ? theme.name : theme_id}", 'NOTE', forms)
   end
