@@ -1,4 +1,4 @@
-{% assign pdc_preview = model.grant_or_request_id."PDC_Get_Data_Preview_For_Proposal" %}
+{% assign pdc_preview = model.PDC_Data_Preview %}
 
 <div class="pdc-data-preview">
 
@@ -10,6 +10,7 @@
       </tr>
     </thead>
     <tbody>
+      {% if pdc_preview.error %}<tr class="no-value"><td colspan="2"><em>{{ pdc_preview.error | escape }}</em></td></tr>{% endif %}
       {% for field in pdc_preview.display_fields %}
       <tr class="{% unless field.has_value %}no-value{% endunless %}">
         <td>{{ field.field_name }}</td>

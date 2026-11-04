@@ -938,7 +938,7 @@
                 "config": {
                   "allow_script": true,
                   "strip_html": "0",
-                  "text": "{% assign pdc_preview = model.grant_or_request_id.\"PDC_Get_Data_Preview_For_Proposal\" %}\n\n<div class=\"pdc-data-preview\">\n\n  <table class=\"pdc-fields-table\">\n    <thead>\n      <tr>\n        <th>Field Name</th>\n        <th>Value</th>\n      </tr>\n    </thead>\n    <tbody>\n      {% for field in pdc_preview.display_fields %}\n      <tr class=\"{% unless field.has_value %}no-value{% endunless %}\">\n        <td>{{ field.field_name }}</td>\n        <td>\n          {% if field.has_value %}\n            {{ field.value }}\n          {% else %}\n            <em>No data</em>\n          {% endif %}\n        </td>\n      </tr>\n      {% endfor %}\n    </tbody>\n  </table>\n\n  <style>\n    .pdc-data-preview {\n      margin: 20px 0;\n    }\n    .pdc-fields-table {\n      width: 100%;\n      border-collapse: collapse;\n      margin-top: 15px;\n    }\n    .pdc-fields-table th {\n      background-color: #f0f0f0;\n      padding: 10px;\n      text-align: left;\n      border-bottom: 2px solid #ddd;\n    }\n    .pdc-fields-table td {\n      padding: 8px;\n      border-bottom: 1px solid #eee;\n    }\n    .pdc-fields-table tbody tr:nth-child(even) {\n      background-color: #f8f8f8;\n    }\n    .pdc-fields-table tr.no-value td {\n      color: #999;\n    }\n    .summary {\n      background-color: #f9f9f9;\n      padding: 10px;\n      border-radius: 4px;\n      margin: 10px 0;\n    }\n  </style>\n</div>"
+                  "text": "{% assign pdc_preview = model.PDC_Data_Preview %}\n\n<div class=\"pdc-data-preview\">\n\n  <table class=\"pdc-fields-table\">\n    <thead>\n      <tr>\n        <th>Field Name</th>\n        <th>Value</th>\n      </tr>\n    </thead>\n    <tbody>\n      {% if pdc_preview.error %}<tr class=\"no-value\"><td colspan=\"2\"><em>{{ pdc_preview.error | escape }}</em></td></tr>{% endif %}\n      {% for field in pdc_preview.display_fields %}\n      <tr class=\"{% unless field.has_value %}no-value{% endunless %}\">\n        <td>{{ field.field_name }}</td>\n        <td>\n          {% if field.has_value %}\n            {{ field.value }}\n          {% else %}\n            <em>No data</em>\n          {% endif %}\n        </td>\n      </tr>\n      {% endfor %}\n    </tbody>\n  </table>\n\n  <style>\n    .pdc-data-preview {\n      margin: 20px 0;\n    }\n    .pdc-fields-table {\n      width: 100%;\n      border-collapse: collapse;\n      margin-top: 15px;\n    }\n    .pdc-fields-table th {\n      background-color: #f0f0f0;\n      padding: 10px;\n      text-align: left;\n      border-bottom: 2px solid #ddd;\n    }\n    .pdc-fields-table td {\n      padding: 8px;\n      border-bottom: 1px solid #eee;\n    }\n    .pdc-fields-table tbody tr:nth-child(even) {\n      background-color: #f8f8f8;\n    }\n    .pdc-fields-table tr.no-value td {\n      color: #999;\n    }\n    .summary {\n      background-color: #f9f9f9;\n      padding: 10px;\n      border-radius: 4px;\n      margin: 10px 0;\n    }\n  </style>\n</div>"
                 },
                 "element_type": "text",
                 "name": "text",
@@ -2028,6 +2028,13 @@
       "name": "CurrentConsentVersion",
       "method_type": "method",
       "body": "\"v1\""
+    },
+    {
+      "key": "MacModelTypeDynPdcConsent#PDC_Data_Preview",
+      "model_type": "MacModelTypeDynPdcConsent",
+      "name": "PDC_Data_Preview",
+      "method_type": "method",
+      "body": "# PDC_Data_Preview\n# What will be sent to the PDC for this consent's grant, for the Data Shared\n# block on the Consent form: PDC_Get_Data_Preview_For_Proposal on the grant,\n# round-tripped through JSON so Liquid only ever gets text, numbers, true/false,\n# nil, lists and hashes. Liquid can't render a Fluxx record (it fails with\n# \"undefined method `to_liquid'\"), so the block calls this on the Consent\n# instead of reaching through to the grant itself.\n# If the preview can't be built (e.g. no active Integration Map has the\n# grant's theme), \"error\" says why and the block shows it.\n\nrequire 'json'\n\ngrant = model.respond_to?(:grant_or_request_id) ? model.grant_or_request_id : nil\nif grant.nil?\n  { 'display_fields' => [], 'error' => 'This consent has no grant.' }\nelse\n  begin\n    JSON.parse(JSON.generate(grant.dyn_invoke_for(:\"PDC_Get_Data_Preview_For_Proposal\")))\n  rescue => e\n    { 'display_fields' => [], 'error' => e.message.to_s }\n  end\nend\n"
     },
     {
       "key": "MacModelTypeDynPdcConsent#Send to PDC",
