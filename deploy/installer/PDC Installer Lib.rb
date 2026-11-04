@@ -915,6 +915,7 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
   end
 
   reported_groups = {}
+  off_themes = {}   # themes with PDC elements on a switched-off grant form
   live_elements = {}
   Array(live['stencil_elements']).each { |l| live_elements[l['key']] = l }
   Array(manifest['stencil_elements']).each do |m|
@@ -931,6 +932,7 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
         # Install never changes a switched-off grant form (it's a rollback)
         if !loc['enabled'] && loc['model_type'] == manifest['scope']['grant_request']['model_type']
           row.call('stencil_elements', where, 'SKIPPED_SWITCHED_OFF', ['switched-off grant form (a rollback), so Install leaves it alone'] + problems)
+          off_themes[loc['model_theme_id']] = true
         else
           row.call('stencil_elements', where, 'CONFIG_DIFFERS', problems)
         end
@@ -965,6 +967,16 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
         row.call('stencil_elements', where, 'DIFFERS', ['body'])
       end
     end
+  end
+
+  # Every form of a theme whose PDC elements sit on a switched-off form, with
+  # its raw enabled value, so it's clear which form Fluxx is showing
+  off_themes.each_key do |theme_id|
+    theme = ModelTheme.find_by(id: theme_id)
+    forms = Stencil.where(model_theme_id: theme_id, deleted_at: nil).order(:id).map do |st|
+      "#{st.id} #{st.name.to_s.strip.inspect}: enabled=#{st.enabled.inspect}, form types #{lib[:form_types].call(st).join('/')}"
+    end
+    row.call('forms', "theme #{theme ? theme.name : theme_id}", 'NOTE', forms)
   end
 
   rows
