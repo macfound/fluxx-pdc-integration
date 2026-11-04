@@ -1,7 +1,7 @@
 # Set Application Dropdown Values
 # Fetches all application forms from PDC and populates model attribute values
 # Uses application form ID for value and includes opportunity ID in description for filtering
-# Restores soft-deleted values if they match current PDC data
+# Only live values are matched; a deleted value is never reused
 
 require 'net/http'
 require 'uri'
@@ -23,7 +23,6 @@ end
 # Track results
 created_count = 0
 updated_count = 0
-restored_count = 0
 skipped_count = 0
 errors = []
 
@@ -44,7 +43,7 @@ applications.each do |app|
   version = app['version'] || 'unknown'
   display_text = "Application ##{app_id} (Opp: #{opportunity_id}, v.#{version})"
 
-  # Check if value exists (including soft-deleted)
+  # Check if a live value exists
   existing_value = ModelAttributeValue.unscoped.find_by(
     model_attribute_id: application_attribute.id,
     value: app_id,
@@ -52,14 +51,7 @@ applications.each do |app|
   )
 
   if existing_value
-    if existing_value.deleted_at.present?
-      # Restore soft-deleted record and update description
-      existing_value.update(
-        deleted_at: nil,
-        description: display_text
-      )
-      restored_count += 1
-    elsif existing_value.description != display_text
+    if existing_value.description != display_text
       # Update description if changed
       existing_value.update(description: display_text)
       updated_count += 1
@@ -82,7 +74,6 @@ end
   total_applications: applications.length,
   created: created_count,
   updated: updated_count,
-  restored: restored_count,
   skipped: skipped_count,
   errors: errors
 }
