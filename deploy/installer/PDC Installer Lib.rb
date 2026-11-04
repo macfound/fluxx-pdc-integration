@@ -231,9 +231,12 @@ lib[:raw_url] = lambda do |repo_url, ref, path|
   "https://raw.githubusercontent.com/#{m[1]}/#{m[2]}/#{ref}/#{encoded}"
 end
 
+# Fetched at the commit repo_ref points to when it can be looked up: GitHub
+# caches a branch's raw files for a few minutes after a push, so the branch
+# name alone can return the previous version of a file.
 lib[:fetch_repo_file] = lambda do |deploy_model, path|
   rs = lib[:repo_settings].call(deploy_model)
-  ref = rs['repo_ref']
+  ref = lib[:repo_commit].call(deploy_model)[0] || rs['repo_ref']
   uri = URI.parse(lib[:raw_url].call(rs['repo_url'], ref, path))
   resp = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 30) do |http|
     http.request(Net::HTTP::Get.new(uri))

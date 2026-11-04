@@ -64,11 +64,14 @@ find_commit = lambda do
 end
 source_label = lambda { commit && commit != repo_ref ? "#{repo_ref} @ #{commit[0, 7]}" : (commit ? commit[0, 7] : repo_ref) }
 
+# Files are fetched at the commit found above when there is one: GitHub caches
+# a branch's raw files for a few minutes after a push, so fetching by branch
+# name can return the previous version while the commit is already the new one.
 fetch = lambda do |path|
   m = repo_url.to_s.strip.match(%r{github\.com[/:]([^/]+)/([^/]+?)(?:\.git)?/?\z})
   raise "repo_url must be a github.com repository URL, got #{repo_url.inspect}" unless m
   encoded = path.split('/').map { |p| CGI.escape(p).gsub('+', '%20') }.join('/')
-  uri = URI.parse("https://raw.githubusercontent.com/#{m[1]}/#{m[2]}/#{repo_ref}/#{encoded}")
+  uri = URI.parse("https://raw.githubusercontent.com/#{m[1]}/#{m[2]}/#{commit || repo_ref}/#{encoded}")
   resp = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 30) do |http|
     http.request(Net::HTTP::Get.new(uri))
   end
@@ -102,9 +105,9 @@ result =
             "installer needs. Ask a Fluxx admin with Ruby access to run this. (Fluxx said: #{ruby_denied})"
     end
     raise "repo_ref #{repo_ref.inspect} isn't a branch, tag or commit name" unless repo_ref.to_s =~ %r{\A[\w.\-/]+\z} && !repo_ref.to_s.include?('..')
-    spec = JSON.parse(fetch.call('deploy/installer/deploy-model.json'))
     find_commit.call
     log << (commit ? "commit: #{commit} (#{repo_ref})" : "commit: unknown (#{commit_note})")
+    spec = JSON.parse(fetch.call('deploy/installer/deploy-model.json'))
 
     # 0. The deploy model's theme, workflow and form. Fluxx normally creates
     # them with the model; anything missing is brought back if soft-deleted,
