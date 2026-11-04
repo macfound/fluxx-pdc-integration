@@ -93,7 +93,7 @@ The deploy model stays in place after install. To remove PDC completely, click
    | `NOT_CONFIGURED` | Secret method still holds the placeholder `"Not Configured"`: replace it with this instance's value, keeping the quotes |
    | `MARKER_NOT_FOUND` | GrantRequest `granted` hook has no `###PDC_CODE###` block (Install adds it) |
    | `MISSING_ROLE` / `ROLE_DIFFERS` | Integration Map button has no role, or not the chosen one |
-   | `UNMARKED` | PDC stencil element recognized by fingerprint but lacking its `PDC:ELEMENT` marker (Install adds it) |
+   | `UNMARKED` | PDC stencil element recognized by fingerprint but lacking its `PDC:ELEMENT` marker (Install adds it). As `UNMARKED_DIFFERS` it's left alone, unless Fluxx turned part of it into "undefined" |
    | `UNMARKED_DIFFERS` | Same as `UNMARKED`, but the element's content also differs from the repo copy |
    | `CONFIG_DIFFERS` | A PDC stencil element has Allow JavaScript off, or strips HTML (its scripts won't run), is in the wrong view, or sits in the PDC group on the dashboard page |
    | `PROFILE_DIFFERS` | A profile restriction doesn't match the deploy record's choices: Consent permissions or the PDC elements, group and field on grant forms and the dashboard page (PDC Grantee Profiles), or the restricted parts of the PDC models' forms (PDC Staff Profiles). Install fixes it. |

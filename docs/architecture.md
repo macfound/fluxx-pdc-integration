@@ -141,6 +141,14 @@ moves the record into a transition state; that state's
   `<span class='mceNonEditable liquid-output'>` into HTML attributes. That
   last one broke the stencil-container block on GrantRequest stencil 26253
   (theme 13948).
+- Fluxx can also rebuild a text element from its top-level nodes, and each
+  comment or bare line break at the top level comes out as the word
+  "undefined" (seen 2026-11-04 on block 4: "undefinedundefined<div …>"). So
+  every PDC block is one top-level element (block 5: a `<script>` and an
+  `<img>` with nothing between them), its `PDC:ELEMENT id=…` marker sits
+  inside that element (`<!-- -->` in a div, `//` in a script, `/* */` in a
+  style), and the bundle strips the files' trailing newline. Install replaces
+  a copy that shows this damage even when its marker is gone.
 - On GrantRequest form stencils the Data Explorer blocks sit inside one group,
   "Contribute to the Philanthropy Data Commons (PDC)". The group can't carry a
   marker, so it's found by its contents.

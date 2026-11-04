@@ -176,7 +176,7 @@ def rehash!(manifest)
         text = read_repo(entry['path'])
         entry['sha256'] = sha(text)
         # Same content without its marker line, for copies not yet marked in Fluxx.
-        entry['unmarked_sha256'] = text && sha(text.sub(Regexp.new("\\A\\s*#{scope['markers']['element_regex']}[^\\n]*\\n?"), ''))
+        entry['unmarked_sha256'] = text && sha(text.sub(Regexp.new("^[^\\n]*#{scope['markers']['element_regex']}[^\\n]*\\n?"), ''))
         problems << "#{entry['path']} is missing" if entry['sha256'].nil?
         next
       end
@@ -216,7 +216,9 @@ def taken_element_text(live_elements, spec, stencil_id, marker_re)
           locs.map { |l| "#{spec['id']}@#{l['stencil_id']} (#{l['stencil_name'].to_s.strip})" }.uniq.join(' or ')
   end
   text = texts.first
-  text =~ marker_re ? text : "<!-- PDC:ELEMENT id=#{spec['id']} -->\n#{text}"
+  # A top-level marker comment would show as "undefined" (see the scope's _element_regex)
+  abort "--take #{spec['id']}: Fluxx's copy has no PDC:ELEMENT marker; add one inside its first element first" unless text =~ marker_re
+  text
 end
 
 def unpack(export_path, takes = [])
@@ -257,7 +259,7 @@ def unpack(export_path, takes = [])
         next if texts.empty?
         puts "WARNING: #{spec['id']} has #{texts.size} different copies in Fluxx; seeded from the first" if texts.size > 1
         text = texts.first
-        text = "<!-- PDC:ELEMENT id=#{spec['id']} -->\n#{text}" unless text =~ marker_re
+        puts "WARNING: #{spec['path']} has no PDC:ELEMENT marker; add one inside its first element" unless text =~ marker_re
         write_repo(spec['path'], text)
         puts "Seeded #{spec['path']} from Fluxx"
       end
@@ -366,7 +368,7 @@ def build_bundle(manifest)
     'shared_slices' => manifest['shared_slices'].map { |x| x.slice('key', 'model_type', 'state', 'field').merge('body' => body.call(x['body_path'])) },
     'stencil_elements' => manifest['stencil_elements'].map do |el|
       spec = scope['stencil_elements'].find { |sp| sp['id'] == el['id'] } || {}
-      el.slice('key', 'id', 'host_model_types', 'sha256', 'unmarked_sha256').merge('text' => read_repo(spec['path'] || el['path']))
+      el.slice('key', 'id', 'host_model_types', 'sha256', 'unmarked_sha256').merge('text' => read_repo(spec['path'] || el['path']).to_s.strip)
     end
   }
 end

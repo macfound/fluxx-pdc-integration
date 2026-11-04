@@ -44,7 +44,8 @@
     "markers": {
       "code_start": "###PDC_CODE###",
       "code_end": "###END_PDC_CODE###",
-      "element_regex": "<!--\\s*PDC:ELEMENT\\s+id=([\\w-]+)\\s*-->"
+      "_element_regex": "The marker sits inside each element's first tag's content, in whatever comment the content allows (<!-- --> in a div, // in a script, /* */ in a style), never as a top-level comment: Fluxx can rebuild an element from its top-level nodes and turns a comment or a bare line break there into the word \"undefined\". Older top-level <!-- --> markers still match.",
+      "element_regex": "PDC:ELEMENT\\s+id=([\\w-]+)"
     },
     "secret_methods": [
       "Get PDC Client ID",
@@ -1282,7 +1283,7 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "b458e9c02eef7b50e29c0c5251199f9e5266a56b828e522f545a968e71d1a173",
+      "sha256": "398ed15b87e6efa2420c54851437b3304f750b0bcde6138bdba29d9ace3a9e17",
       "unmarked_sha256": "0b45321006f45eaa34ece5e2ee47b19f86eb5cbbc1867bf639168ff0feefea7f"
     },
     {
@@ -1292,7 +1293,7 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "dfc10f4caf823351885819a88461293c40fb82cc2ccf27512e04bf98bfc33934",
+      "sha256": "1f86e7e2d9ea0270f2efe79a9d6c175e681f8208f4a1ed7eb5d57b2b2953070d",
       "unmarked_sha256": "2674f5865202c4af0f337f26a33130a0f8950ceb9ab955f6205caa11a8197ec8"
     },
     {
@@ -1302,8 +1303,8 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "81154b14cb83c462cc629d4bf4f6dab760e0dadc64b101811404e43321dbc6f1",
-      "unmarked_sha256": "a565b715102d5afb32350c9d64c38239271193e8b9aa31b9bd6f52362c4662d7"
+      "sha256": "33a81a19dcf53bed890a2ccec4fcd54b7582de893401b4acba715e258bd34a5f",
+      "unmarked_sha256": "d1f2237501c834ca09d25ccb96b060308e92f57f4dc317780c7c25ba0a6cd968"
     },
     {
       "key": "stencil-container",
@@ -1312,8 +1313,8 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "a5676f58a4afc1922348617878f0b8a9ffeae9eebbe27f814aabf42c24796719",
-      "unmarked_sha256": "c70fb9e11d2a5feb1121931bb4547ff0f51aa363a051e81e1ce6d081a3ba7f2e"
+      "sha256": "76746f63244d64d68eed8b67d879ae395eab0f24a2ca45e0f6c2221c00fa0f0d",
+      "unmarked_sha256": "205f43c85fdd386034a80ffa5c0299c58c9e8f27bf5f5c9b6668bd318a148826"
     },
     {
       "key": "stencil-container-readonly",
@@ -1322,8 +1323,8 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "6bd293220b9d73fa18d7c7f94a7b1f53382dd52980ec9fa86bf7f5e058685c05",
-      "unmarked_sha256": "e24ff1b8b52eac6d95f479b32841e60b798cb215b34e6a533ae7acac81c10b13"
+      "sha256": "a8142f67acadf977f2f0ac52e0f346cf128492d84dc215cd4ac4f4e4d9b02faa",
+      "unmarked_sha256": "739d2639549c2a0dae5f7ba729914cecdc41d613e277d93bf2b6e5ee50d91d5d"
     },
     {
       "key": "floating-panel",
@@ -1332,7 +1333,7 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "c879ec3cebc7ee5da4a21507da63084197610eb850548be9526fa862d2a74a42",
+      "sha256": "242d8e0194e1546abb03e925b26871d702d8a6e40d4475185104d3c46cc0f826",
       "unmarked_sha256": "573e7d5da90b95094308b7550ac538b1aafb74153bea3ad04ccf2b26f601d87a"
     },
     {
@@ -1342,7 +1343,7 @@
       "host_model_types": [
         "GenericTemplate"
       ],
-      "sha256": "52660239f6c5c6b8b567aff06bc4c51819e5cf0114464549c31e44f2a2e73684",
+      "sha256": "a50743fb6672c5bf32112d3ab8b93d4fe8d9fe61aafe6443ccbf80d01c71c93d",
       "unmarked_sha256": "26ffd63c59ff8b023e643eba326d26512207c457ea0d6a5ddd5d52d329d65d64"
     }
   ]

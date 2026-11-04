@@ -291,6 +291,15 @@ lib[:element_text] = lambda do |el|
   cfg['text'].is_a?(String) ? cfg['text'] : nil
 end
 
+# Fluxx can rebuild a text element from its top-level nodes, turning each
+# comment or bare line break there into the word "undefined" (an older PDC
+# element's top-level marker comment goes that way). A copy like that is PDC's
+# own text damaged by Fluxx, not an admin's edit, so Install may replace it.
+lib[:undefined_damage] = lambda do |text|
+  t = text.to_s
+  t =~ /\A\s*undefined/ || t.include?('>undefined<') ? true : false
+end
+
 # Fluxx stores checkbox settings as true, "1", "0", etc.
 lib[:truthy] = lambda do |v|
   v == true || v.to_s.strip =~ /\A(1|true|yes|on)\z/i ? true : false
@@ -388,6 +397,7 @@ lib[:locate_elements] = lambda do |scope, include_text = false|
           'parent_groups' => entry['parents'],
           'sha256' => lib[:sha].call(text),
           'sha256_decoded' => lib[:sha].call(decoded),
+          'undefined_damage' => lib[:undefined_damage].call(text),
           'config_problems' => lib[:element_config_problems].call(entry['element'], scope['element_required_config']) +
                                lib[:element_visibility_problems].call(entry['element'], (specs.find { |s| s['id'] == id } || {})['visibility']),
           'profiles' => lib[:profiles_of].call(entry['element'])
@@ -971,8 +981,11 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
         # No marker yet, but the content can still be compared with the repo
         # copy minus its marker line.
         same = m['unmarked_sha256'] && [here.first['sha256'], here.first['sha256_decoded']].include?(m['unmarked_sha256'])
-        row.call('stencil_elements', where, same ? 'UNMARKED' : 'UNMARKED_DIFFERS',
-                 ["#{same ? 'content matches the repo' : 'content differs from the repo'}; groups: #{groups.first.join(' > ')}"])
+        why = if same then 'content matches the repo'
+              elsif here.first['undefined_damage'] then 'Fluxx turned part of it into "undefined"; Install replaces it'
+              else 'content differs from the repo'
+              end
+        row.call('stencil_elements', where, same ? 'UNMARKED' : 'UNMARKED_DIFFERS', ["#{why}; groups: #{groups.first.join(' > ')}"])
       elsif [here.first['sha256'], here.first['sha256_decoded']].include?(m['sha256'])
         row.call('stencil_elements', where, 'MATCH')
       else

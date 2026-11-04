@@ -87,7 +87,7 @@ uninstall = lambda do |log|
       node_at = lambda { |trail| trail.inject(doc) { |n, i| n['elements'][i] } }
       label = lambda { |node| (node['config'].is_a?(Hash) && node['config']['label']) || node['label'] || 'group' }
       # Marked PDC elements being removed (fingerprint matches have no marker to count)
-      marker_of = lambda { |id| /<!--\s*PDC:ELEMENT\s+id=#{Regexp.escape(id.to_s)}\s*-->/ }
+      marker_of = lambda { |id| /PDC:ELEMENT\s+id=#{Regexp.escape(id.to_s)}(?![\w-])/ }
       removed_ids = trails.select { |t, v| lib[:element_text].call(node_at.call(t)).to_s =~ marker_of.call(v) }.values
       # Collapse upward: a parent group whose children are all removable is
       # removed instead (groups only; other containers stay).

@@ -522,7 +522,8 @@ install = lambda do |log|
       spec = specs.find { |s| s['id'] == id }
       node = here.first['trail'].inject(doc) { |n, i| n['elements'][i] }
       text = lib[:element_text].call(node)
-      if here.first['via'] == 'fingerprint' && ![lib[:sha].call(text), lib[:sha].call(CGI.unescapeHTML(text))].include?(spec['unmarked_sha256'])
+      if here.first['via'] == 'fingerprint' && ![lib[:sha].call(text), lib[:sha].call(CGI.unescapeHTML(text))].include?(spec['unmarked_sha256']) &&
+         !lib[:undefined_damage].call(text)
         log['unmarked and edited (left alone; review, then replace by hand)'] << "#{id} @ stencil #{stencil_id} (#{st.name.to_s.strip})"
         skipped << id
         next

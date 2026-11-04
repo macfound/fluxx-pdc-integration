@@ -20,7 +20,8 @@
   "markers": {
     "code_start": "###PDC_CODE###",
     "code_end": "###END_PDC_CODE###",
-    "element_regex": "<!--\\s*PDC:ELEMENT\\s+id=([\\w-]+)\\s*-->"
+    "_element_regex": "The marker sits inside each element's first tag's content, in whatever comment the content allows (<!-- --> in a div, // in a script, /* */ in a style), never as a top-level comment: Fluxx can rebuild an element from its top-level nodes and turns a comment or a bare line break there into the word \"undefined\". Older top-level <!-- --> markers still match.",
+    "element_regex": "PDC:ELEMENT\\s+id=([\\w-]+)"
   },
 
   "secret_methods": ["Get PDC Client ID", "Get PDC Client Secret"],
