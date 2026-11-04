@@ -376,7 +376,7 @@ lib[:locate_elements] = lambda do |scope, include_text = false|
           'sha256' => lib[:sha].call(text),
           'sha256_decoded' => lib[:sha].call(decoded),
           'config_problems' => lib[:element_config_problems].call(entry['element'], scope['element_required_config']) +
-                               lib[:element_visibility_problems].call(entry['element'], specs.find { |s| s['id'] == id }['visibility']),
+                               lib[:element_visibility_problems].call(entry['element'], (specs.find { |s| s['id'] == id } || {})['visibility']),
           'profiles' => lib[:profiles_of].call(entry['element'])
         }.merge(include_text ? { 'text' => text } : {})
         if entry['trail'].size > 1
@@ -688,6 +688,11 @@ lib[:collect] = lambda do |scope, include_bodies|
   located = lib[:locate_elements].call(scope, include_bodies)
   scope['stencil_elements'].each do |spec|
     live['stencil_elements'] << { 'key' => spec['id'], 'id' => spec['id'], 'locations' => located[spec['id']] }
+  end
+  # A marker whose id isn't one of this release's elements (e.g. an older id)
+  (located.keys - scope['stencil_elements'].map { |s| s['id'] }).each do |id|
+    where = located[id].map { |l| "stencil #{l['stencil_id']} (#{l['stencil_name'].to_s.strip})" }.uniq.join(', ')
+    live['warnings'] << "PDC:ELEMENT marker id=#{id} on #{where} isn't a PDC element this release knows, so it's left alone"
   end
   live['stencil_fields'] = lib[:stencil_fields].call(scope, located, include_bodies)
 
