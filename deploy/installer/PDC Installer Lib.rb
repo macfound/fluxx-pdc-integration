@@ -822,7 +822,7 @@ end
 # Returns report rows: { kind, key, status, detail }.
 # Statuses: MATCH, DIFFERS, MISSING, EXTRA, SKIPPED_SECRET, MARKER_NOT_FOUND,
 # MISSING_ROLE, ROLE_DIFFERS, PROFILE_DIFFERS, UNMARKED, UNMARKED_DIFFERS,
-# CONFIG_DIFFERS, AMBIGUOUS, DUPLICATE.
+# CONFIG_DIFFERS, SKIPPED_SWITCHED_OFF, AMBIGUOUS, DUPLICATE.
 lib[:validate] = lambda do |manifest, live, deploy_model|
   # (statuses also include NOT_CONFIGURED: a secret method still holding its
   # placeholder, or Get PDC Base URL with no PDC Environment chosen)
@@ -927,7 +927,13 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
       where = "#{m['key']} @ stencil #{stencil_id} (#{here.first['stencil_name']})"
       here.each do |loc|
         problems = Array(loc['config_problems'])
-        row.call('stencil_elements', where, 'CONFIG_DIFFERS', problems) if problems.any?
+        next if problems.empty?
+        # Install never changes a switched-off grant form (it's a rollback)
+        if !loc['enabled'] && loc['model_type'] == manifest['scope']['grant_request']['model_type']
+          row.call('stencil_elements', where, 'SKIPPED_SWITCHED_OFF', ['switched-off grant form (a rollback), so Install leaves it alone'] + problems)
+        else
+          row.call('stencil_elements', where, 'CONFIG_DIFFERS', problems)
+        end
       end
       groups = here.map { |loc| loc['parent_groups'] }.uniq
       if grantee_ids.any?

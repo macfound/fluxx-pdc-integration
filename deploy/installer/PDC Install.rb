@@ -507,7 +507,11 @@ install = lambda do |log|
   grantee_ids = grantees.map { |pr| pr.id.to_s }.sort
   (by_stencil.keys | plan_by_stencil.keys).each do |stencil_id|
     st = Stencil.find(stencil_id)
-    next if st.model_type == gr_type && !st.enabled   # switched-off grant forms are rollbacks
+    # Switched-off grant forms are rollbacks: never changed, but listed
+    if st.model_type == gr_type && !st.enabled
+      log['left alone: switched-off grant form (a rollback)'] << "stencil #{st.id} (#{st.name.to_s.strip})" if by_stencil[stencil_id].any?
+      next
+    end
     doc = JSON.parse(st['json'].to_s)
     done = []   # [status, what] for this form
     skipped = []
@@ -576,10 +580,6 @@ install = lambda do |log|
     next if done.empty?
     raw = JSON.generate(doc, ascii_only: true)
     if st.model_type == gr_type
-      unless st.enabled
-        log['left alone: switched-off grant form (a rollback)'] << "stencil #{st.id} (#{st.name.to_s.strip})"
-        next
-      end
       copy = st.dup
       base = st.name.to_s.strip.sub(/\s*\(PDC Removed\)\z/, '')   # a form Uninstall made goes back to "(PDC)"
       copy['name'] = base.end_with?('(PDC)') ? base : "#{base} (PDC)"
