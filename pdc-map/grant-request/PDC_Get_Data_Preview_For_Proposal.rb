@@ -65,15 +65,22 @@ field_mappings.each do |mapping|
       end
     end
     
+    # The text PDC Send Proposal to PDC sends for this field (value.to_s).
+    # Liquid can only render plain values, so the preview and the copy Stamp
+    # Consent keeps hold this text, never the object itself. A value that is
+    # still a whole record means the mapping names no field of it to send.
+    value_text = value.to_s.strip
+    record = !value.nil? && value.respond_to?(:attributes)
+
     # Store in hash using raw field name for API compatibility
-    pdc_data[raw_pdc_field] = value
-    
+    pdc_data[raw_pdc_field] = value_text
+
     # Store clean info for display (use string keys for Liquid compatibility)
     field_info << {
       "field_name" => clean_pdc_field,
-      "value" => value,
+      "value" => record ? "(a #{value.class.name.demodulize} record: choose which of its fields to send in this field's mapping)" : value_text,
       "source" => model_type || "Unknown",
-      "has_value" => !value.nil? && value.to_s.strip != ""
+      "has_value" => value_text != ""
     }
     
   rescue => e
