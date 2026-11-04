@@ -749,6 +749,33 @@ lib[:base_url_body] = lambda do |url|
   "#{url.inspect}"
 end
 
+# Active PDC Integration Maps and their Grant Request Themes. A grant uses the
+# active map that lists its theme, so a map with no themes is used by no grant
+# (NO_THEMES) and a theme on two active maps stops its grants from sending
+# (THEME_ON_SEVERAL_MAPS). Empty until Install has put the maps' theme method in.
+lib[:map_theme_rows] = lambda do
+  klass = 'MacModelTypeDynPdcApplicationForm1'.safe_constantize
+  next [] if klass.nil? || !ModelMethod.where(model_type: klass.name, name: 'Get Grant Request Theme Ids', deleted_at: nil).exists?
+  rows = []
+  by_theme = Hash.new { |h, k| h[k] = [] }
+  klass.where(state: 'active', deleted_at: nil).each do |map|
+    name = map.get_dyn_value(:name).presence || "map #{map.id}"
+    ids = map.dyn_invoke_for(:"Get Grant Request Theme Ids")
+    if ids.empty?
+      rows << { 'kind' => 'maps', 'key' => name, 'status' => 'NO_THEMES',
+                'detail' => ['no Grant Request Themes chosen, so no grant uses this map'] }
+    end
+    ids.each { |id| by_theme[id] << name }
+  end
+  by_theme.each do |id, names|
+    next if names.size < 2
+    theme = ModelTheme.find_by(id: id.to_i)&.name || "theme #{id}"
+    rows << { 'kind' => 'maps', 'key' => theme, 'status' => 'THEME_ON_SEVERAL_MAPS',
+              'detail' => ["on #{names.join(', ')}: its grants can't be sent until only one active map has it"] }
+  end
+  rows
+end
+
 # Points a bundle's or manifest's Get PDC Base URL entry at the environment
 # chosen on deploy_model: its body (bundle) and body_sha256 (manifest). With
 # none chosen the entry is flagged environment_missing, so Install leaves the

@@ -212,6 +212,10 @@ install = lambda do |log|
     end
   end
 
+  # Instance-specific dropdowns, now that the fields exist (e.g. the Integration
+  # Map's Grant Request Themes on a first install)
+  log['note'] << "lists refreshed: #{model.dyn_invoke_for(:"PDC Populate Options")}"
+
   # The models' own forms, from the repo (after the fields and options above,
   # which they refer to). Two things in the repo copy are TRN's: profile
   # restrictions become the PDC Staff Profiles chosen on this record, and

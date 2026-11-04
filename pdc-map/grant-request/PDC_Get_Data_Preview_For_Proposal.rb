@@ -6,7 +6,7 @@ require 'json'
 
 application_form = model.dyn_invoke_for(:"PDC Get Integration Mapping")
 unless application_form
-  raise "PDC application form not found"
+  raise "No active PDC Integration Map has this grant's theme (#{model.model_theme&.name}): choose it in a map's Grant Request Themes."
 end
 
 # Get all field mappings for this application form

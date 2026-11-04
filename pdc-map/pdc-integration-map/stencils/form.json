@@ -54,6 +54,31 @@
         },
         {
           "config": {
+            "label": "Grant Request Themes (grants of these themes use this map)",
+            "required": "0",
+            "select_type": "multiple-select-transfer checkboxes",
+            "enable_percentage_slider": "0",
+            "allow_percent": "0",
+            "disable_validation_100_totals": "0",
+            "searchable_ui": "0",
+            "allow_only_deepest_selection": "0"
+          },
+          "element_type": "attribute",
+          "label": "Grant Request Themes (grants of these themes use this map)",
+          "name": "grant_request_themes",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
             "label": "Opportunity",
             "required": "0",
             "show_as_radio_buttons": "0"

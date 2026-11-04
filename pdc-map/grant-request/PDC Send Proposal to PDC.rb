@@ -17,6 +17,7 @@ has_proposal_id = model.respond_to?(:pdc_proposal_id) && model.pdc_proposal_id.p
 
 # Get the PDC application form through the relationship model
 pdc_app_form = model.dyn_invoke_for(:"PDC Get Integration Mapping")
+raise "Cannot send proposal to PDC: No active PDC Integration Map has this grant's theme (#{model.model_theme&.name}): choose it in a map's Grant Request Themes." if pdc_app_form.nil?
 
 # Get application form ID from the related record
 application_form_id = nil

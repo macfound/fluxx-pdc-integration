@@ -13,15 +13,18 @@
 #                           the PDC elements (interactive / read-only set)
 #   pdc_environment      <- Production / Sandbox (fixed, from PDC Installer
 #                           Lib): which PDC Install points Get PDC Base URL at
+# and on the PDC Integration Map (once Install has created it):
+#   grant_request_themes <- GrantRequest themes: grants of the themes a map
+#                           lists use that map
 # Profile names differ per org, so the admin chooses; profiles whose
 # categories include "grantee" are labelled to help.
 # Options for deleted records are retired, not removed. Safe to re-run. Only
-# writes ModelAttributeValue rows on the deploy model's own attributes.
+# writes ModelAttributeValue rows, on the attributes above.
 
 require 'json'
 
-sync = lambda do |attr_name, records|
-  attr = ModelAttribute.where(model_type: model.class.name, name: attr_name, deleted_at: nil).first
+sync = lambda do |attr_name, records, model_type = model.class.name|
+  attr = ModelAttribute.where(model_type: model_type, name: attr_name, deleted_at: nil).first
   next "#{attr_name}: attribute not found" if attr.nil?
   existing = {}
   ModelAttributeValue.where(model_attribute_id: attr.id, deleted_at: nil).each { |v| existing[v.value.to_s] = v }
@@ -67,4 +70,5 @@ environments = model.dyn_invoke_for(:"PDC Installer Lib")[:pdc_environments].map
 
 [sync.call('installer_role', roles), sync.call('pdc_event_role', roles), sync.call('pdc_grantee_profile', profiles),
  sync.call('pdc_staff_profile', profiles), sync.call('grant_request_themes', themes),
- sync.call('pdc_environment', environments)].join('; ')
+ sync.call('pdc_environment', environments),
+ "Integration Map #{sync.call('grant_request_themes', themes, 'MacModelTypeDynPdcApplicationForm1')}"].join('; ')

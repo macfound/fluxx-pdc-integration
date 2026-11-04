@@ -92,8 +92,15 @@ the right options in the dropdowns until they've been run.
 
 With the dropdowns populated, choose:
 
-- The **opportunity** this map corresponds to, and
-- The **application form** from the PDC that you want to mirror.
+- The **opportunity** this map corresponds to,
+- The **application form** from the PDC that you want to mirror, and
+- The **Grant Request Themes** that use this map. A grant is sent with, and shows
+  grantees the fields of, the active map that lists its theme; the map's name
+  doesn't matter. Each theme can be on only one active map: Activate (or saving
+  an active map) stops with a message naming the other map if a theme is
+  already taken. Activate doesn't appear until at least one theme is chosen. The
+  theme list comes from the PDC deploy record: click **Refresh Lists** there
+  after adding a grant theme.
 
 ### Step 4 — Build the field mappings
 

@@ -30,6 +30,7 @@
   "runtime_option_attributes": [
     "MacModelTypeDynPdcApplicationForm1.opportunity",
     "MacModelTypeDynPdcApplicationForm1.application",
+    "MacModelTypeDynPdcApplicationForm1.grant_request_themes",
     "MacModelTypeDynPdcMappedField1.fluxx_field",
     "MacModelTypeDynPdcMappedField1.pdc_field"
   ],

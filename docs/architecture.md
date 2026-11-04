@@ -40,8 +40,14 @@ GrantRequest methods
                            ├─► Get Auth Token from PDC     [on the map record]
                            └─► reads MacModelTypeDynPdcMappedField1 children
   PDC_Get_Data_Preview_For_Proposal ──► PDC Get Integration Mapping
-  PDC_Get_PDC_Field_Mapping ──► Get Field Mapping JSON for PDC Data Explorer
-                                 [on the first map record — see TODO in file]
+  PDC_Get_PDC_Field_Mapping ──► PDC Get Integration Mapping
+                            └─► Get Field Mapping JSON for PDC Data Explorer
+
+  PDC Get Integration Mapping: the active map whose Grant Request Themes include
+  the grant's theme (Get Grant Request Theme Ids, on each map). The map's name
+  plays no part. A theme can be on one active map only: the map's Check Theme
+  Conflicts (before_save) stops an Activate or edit that would share one, and
+  Validate reports NO_THEMES / THEME_ON_SEVERAL_MAPS.
 
 PDC Consent model
   Check If Consent Granted (on consent_type change) ──► Stamp Consent
@@ -89,8 +95,6 @@ fresh copy of the stencil per card; block 5 scopes lookups to the active card.
 These were deliberately **not** fixed during the repo migration (contents were
 kept byte-identical to what is deployed/tested):
 
-- `grant-request/PDC_Get_PDC_Field_Mapping.rb` — uses `.first` map record;
-  selection logic TODO is documented in the file header.
 - `pdc-consent/CurrentConsentLanguage.rb` — the Q&A link is a placeholder
   (`yoursite.invalid`), and the contact address and "the Foundation" wording are
   MacArthur's.

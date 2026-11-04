@@ -18,6 +18,8 @@
 #   CONFIG_DIFFERS    a PDC stencil element has Allow JavaScript off or strips HTML
 #   AMBIGUOUS         an element's fingerprints match more than one PDC element; needs a human
 #   DUPLICATE         the same PDC element appears more than once in one stencil
+#   NO_THEMES         an active Integration Map with no Grant Request Themes (no grant uses it)
+#   THEME_ON_SEVERAL_MAPS  a Grant Request Theme on more than one active Integration Map
 #
 # Saves the results to validate_results on this deploy model (rendered on the
 # card by the Results block via PDC_Results), and returns them. Read-only
@@ -37,7 +39,7 @@ record =
     # Validate with the scope the manifest was built from, so fingerprints
     # and exclusions always agree with the hashes.
     live = lib[:collect].call(manifest['scope'], false)
-    rows = lib[:validate].call(manifest, live, model)
+    rows = lib[:validate].call(manifest, live, model) + lib[:map_theme_rows].call
     lib[:results_record].call('Validation', "read-only, against #{lib[:ref_label].call(model)}", rows,
                               'warnings' => Array(live['warnings']))
   rescue => e

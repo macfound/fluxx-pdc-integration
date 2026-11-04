@@ -14,6 +14,7 @@ end
 proposal_id = model.pdc_proposal_id
 
 pdc_integration_form = model.dyn_invoke_for(:"PDC Get Integration Mapping")
+raise "No active PDC Integration Map has this grant's theme (#{model.model_theme&.name}): choose it in a map's Grant Request Themes." if pdc_integration_form.nil?
 
 # Get base URL and auth token
 base_url = pdc_integration_form.dyn_invoke_for(:"Get PDC Base URL")
