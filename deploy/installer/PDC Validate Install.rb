@@ -45,7 +45,7 @@ record =
     live = lib[:collect].call(manifest['scope'], false)
     rows = lib[:validate].call(manifest, live, model) + lib[:map_theme_rows].call
     lib[:results_record].call('Validation', "read-only, against #{lib[:ref_label].call(model)}", rows,
-                              'warnings' => Array(live['warnings']))
+                              'warnings' => lib[:stale_installer_warnings].call(model) + Array(live['warnings']))
   rescue => e
     lib[:results_record].call('Validation', 'failed', [], 'error' => "#{e.class}: #{e.message}")
   end

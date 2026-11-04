@@ -207,6 +207,16 @@ lib[:ref_label] = lambda do |deploy_model|
   sha && sha != ref ? "#{ref} @ #{sha[0, 7]}" : (sha ? sha[0, 7] : ref)
 end
 
+# A warning when the installer code on deploy_model (Installer Commit, set by
+# Update Installer) is older than the commit repo_ref points to now: the run
+# then compares against the new repo with the old code.
+lib[:stale_installer_warnings] = lambda do |deploy_model|
+  have = deploy_model.respond_to?(:installer_commit) ? deploy_model.installer_commit.to_s.strip : ''
+  want = lib[:repo_commit].call(deploy_model)[0].to_s
+  next [] if have.empty? || want !~ /\A\h{40}\z/ || have == want
+  ["the installer on this record is from #{have[0, 7]} but #{lib[:repo_ref].call(deploy_model)} is at #{want[0, 7]}: click Update Installer, then run this again"]
+end
+
 # "owner/repo@main @ 8216643", for results
 lib[:repo_label] = lambda do |deploy_model|
   rs = lib[:repo_settings].call(deploy_model)
@@ -1394,6 +1404,8 @@ lib[:run_with_snapshots] = lambda do |deploy_model, title, results_field, target
       end
   end
   mode = extra.delete('mode') || (extra['error'] ? 'failed' : 'done')
+  stale = (lib[:stale_installer_warnings].call(deploy_model) rescue [])
+  extra['warnings'] = stale + Array(extra['warnings']) if stale.any?
   record = lib[:results_record].call(title, mode, lib[:log_entries].call(log), extra)
   saved = lib[:store_results].call(deploy_model, results_field, record, false)
   deploy_model.save! if save_now
