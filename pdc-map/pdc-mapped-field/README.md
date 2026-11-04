@@ -10,6 +10,10 @@ model (see `../pdc-integration-map/`, e.g. `Update Field Mapping from Selected
 Application.rb`, `Set Sort Order Of Mapped Fields.rb`, `Delete Field Mappings
 on this Form.rb`). Its own methods hold the one rule for what a mapping sends:
 
+- `Fluxx Field Source` — the model and field a mapping's Fluxx Field reads,
+  from the dropdown option's value (`organization.tax_id`), since the label is
+  the column humanized and drops `_id` ("Tax"). A core `x_id` column with an
+  `x` association reads the record.
 - `Value For Grant` — the value sent for one grant (passed in as `@pdc_grant`):
   the Fluxx field, or its Fluxx Related Field when that's a record; a record
   still left sends its Fluxx id, an empty value `nil`. Used by

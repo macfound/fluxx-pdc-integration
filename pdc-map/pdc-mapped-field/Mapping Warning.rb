@@ -7,14 +7,13 @@
 #   - a related field the record type doesn't have: the same
 #   - a Fluxx Field its model doesn't have always sends nothing
 
-desc = model.respond_to?(:fluxx_field) ? model.fluxx_field.to_s : ''
-m = desc.match(/^(\w+)\s*\((core|dynamic)\):\s*(.+?)(?:\s*\[.+?\])?$/)
-klass = m && %w[GrantRequest Organization].include?(m[1]) ? m[1].safe_constantize : nil
-if desc.strip.empty? || klass.nil?
+spec = model.dyn_invoke_for(:"Fluxx Field Source")   # which model and field it reads
+klass = spec && spec['model_type'].safe_constantize
+if klass.nil?
   nil
 else
-  field_name = m[3].strip.downcase.gsub(/[\s\-]+/, '_')
-  label = m[3].strip
+  field_name = spec['field']
+  label = spec['label']
   # Whether a model type has a field: a method, a column, an association or a
   # dynamic attribute
   has_field = lambda do |k, name|
