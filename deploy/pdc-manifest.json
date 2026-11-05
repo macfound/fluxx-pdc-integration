@@ -1323,8 +1323,8 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "398ed15b87e6efa2420c54851437b3304f750b0bcde6138bdba29d9ace3a9e17",
-      "unmarked_sha256": "0b45321006f45eaa34ece5e2ee47b19f86eb5cbbc1867bf639168ff0feefea7f"
+      "sha256": "e64beac9f83d0ffa200f128e41edb66a1f1b7374cce46474c94c97152de7fcee",
+      "unmarked_sha256": "91d85637cd7acc814f76d8388a1277a1c41fddb4892d981f9f20a6f6ac2f2ff1"
     },
     {
       "key": "fluxx-card-api",
@@ -1353,8 +1353,8 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "76746f63244d64d68eed8b67d879ae395eab0f24a2ca45e0f6c2221c00fa0f0d",
-      "unmarked_sha256": "205f43c85fdd386034a80ffa5c0299c58c9e8f27bf5f5c9b6668bd318a148826"
+      "sha256": "051646cfc0d146e066c1df6bc1692946eec34461ae09b3aa1012562eff9996b9",
+      "unmarked_sha256": "54bc39a240d6aa85ee3cec2499752c989291bd9b19bccdbec405e6357f5fdb2f"
     },
     {
       "key": "stencil-container-readonly",
@@ -1363,8 +1363,8 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "a8142f67acadf977f2f0ac52e0f346cf128492d84dc215cd4ac4f4e4d9b02faa",
-      "unmarked_sha256": "739d2639549c2a0dae5f7ba729914cecdc41d613e277d93bf2b6e5ee50d91d5d"
+      "sha256": "b8b36fca13f0504c34fdf0f50946a18a7cad6361d04786dd4ae46858e663a8c9",
+      "unmarked_sha256": "acf6866c30e3100b07950e0d318be8d8693e196375f4092e5577c6797074b828"
     },
     {
       "key": "floating-panel",

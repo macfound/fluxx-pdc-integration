@@ -641,6 +641,12 @@
         font-weight: 600;
     }
 
+    /* Declined is a decision, not a missing step: neutral, not amber */
+    .pdc-state-declined {
+        color: #495057;
+        font-weight: 600;
+    }
+
     /* Marker states */
     .pdc-step--available .pdc-step-marker {
         background: #fff;
@@ -650,6 +656,11 @@
 
     .pdc-step--complete .pdc-step-marker {
         background: #1e7e34;
+        color: #fff;
+    }
+
+    .pdc-step--declined .pdc-step-marker {
+        background: #6c757d;
         color: #fff;
     }
 

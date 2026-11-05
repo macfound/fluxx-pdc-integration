@@ -45,14 +45,14 @@ Use it where the login/launch flow is unwanted.
 
 ## Consent step states
 
-Step 2 of the journey (both block `4` and block `4r`) resolves two independent
-booleans server-side in Liquid. Both are documented at length in the comment above
+Step 2 of the journey (both block `4` and block `4r`) resolves three booleans
+server-side in Liquid. All three are documented at length in the comment above
 the tags; the deploy-relevant behavior:
 
 | Consent record | `consent_type` | Step 2 renders |
 |---|---|---|
 | exists | affirmative (non-blank, no "decline") | complete branch: green check, "Done", CTA |
-| exists | contains "decline" | action branch: "Action needed", CTA |
+| exists | contains "decline" | declined branch: grey check, "Declined" and an acknowledgment, CTA |
 | exists | blank (not yet answered) | action branch: "Action needed", CTA |
 | **none** | — | action branch: explanatory text, **no CTA** |
 

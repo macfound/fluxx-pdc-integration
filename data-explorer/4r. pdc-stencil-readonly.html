@@ -34,8 +34,13 @@
                              Grants created before 07/01/2026 have no
                              record at all (see "PDC After Save -
                              Create Consent If Empty").
-         has_consent      -> did they affirmatively grant? Picks which
-                             branch shows. Both branches keep the CTA.
+         has_consent      -> did they affirmatively grant? Picks the
+                             complete branch.
+         has_declined     -> did they decline? Declining is a decision,
+                             not a missing step, so it gets its own
+                             acknowledged branch instead of "Action
+                             needed". Every branch with a record keeps
+                             the CTA, so they can change their mind.
 
        Granted is tested as "non-blank AND not declined", NOT as a match
        on "grant". This mirrors "PDC Send Proposal to PDC" and fails in
@@ -43,18 +48,18 @@
        data") still reads as granted, and submission re-checks anyway.
        `contains "ecline"` drops the leading letter on purpose to match
        either case -- it is the Liquid equivalent of that method's
-       /[Dd]ecline/ regex, not a typo. Note blank (not yet answered) and
-       declined are distinct states that both land in the action branch.
+       /[Dd]ecline/ regex, not a typo. Only blank (not yet answered)
+       lands in the action branch.
 
        KEEP EACH TAG ON A SINGLE LINE. Fluxx's save-time cleanup mangles
        wrapped Liquid tags and blanks the whole block.
 
-       Keep this block and both consent branches IDENTICAL to the twin
+       Keep this block and all consent branches IDENTICAL to the twin
        stencil (4. pdc-stencil-container.html). They are synced by hand. -->
-    {% assign consentForms = 'MacModelTypeDynPdcConsent' | dyn_related: 'grant_or_request_id', model.id %} {% assign consentFormCount = consentForms.size %} {% assign has_consent_form = false %} {% assign has_consent = false %}
+    {% assign consentForms = 'MacModelTypeDynPdcConsent' | dyn_related: 'grant_or_request_id', model.id %} {% assign consentFormCount = consentForms.size %} {% assign has_consent_form = false %} {% assign has_consent = false %} {% assign has_declined = false %}
     {% if consentFormCount > 0 %} {% assign consentForm = consentForms | last %} {% assign consentFormId = consentForm.id %} {% if consentFormId != blank %} {% assign has_consent_form = true %} {% endif %} {% endif %}
     {% if has_consent_form and consentForm.consent_type != blank %} {% assign has_consent = true %} {% endif %}
-    {% if consentForm.consent_type contains "ecline" %} {% assign has_consent = false %} {% endif %}
+    {% if has_consent_form and consentForm.consent_type contains "ecline" %} {% assign has_consent = false %} {% assign has_declined = true %} {% endif %}
 
     <!-- ============================================================
        JOURNEY  (read-only)
@@ -89,6 +94,24 @@
                         >Consent to share your data</span
                     >
                     <span class="pdc-step-state pdc-state-complete">Done</span>
+                    <a
+                        class="to-modal pdc-step-cta"
+                        href="/machine_models/{{ consentForm.id }}/edit"
+                        data-on-success="refreshCaller,close"
+                        rel="noopener"
+                        >Review and Manage Consent</a
+                    >
+                </div>
+            </li>
+            {% elsif has_declined %}
+            <li class="pdc-step pdc-step--declined">
+                <span class="pdc-step-marker" aria-hidden="true">&#10003;</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title"
+                        >Consent to share your data</span
+                    >
+                    <span class="pdc-step-state pdc-state-declined">Declined</span>
+                    <span class="pdc-step-state">Thank you for letting us know. This grant's data won't be shared with the PDC.</span>
                     <a
                         class="to-modal pdc-step-cta"
                         href="/machine_models/{{ consentForm.id }}/edit"
