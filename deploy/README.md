@@ -70,6 +70,17 @@ The deploy model stays in place after install. To remove PDC completely, click
      Secret` methods on the PDC Integration Map (run Install first, so it exists) and the
      fields are cleared, so the values never stay on the deploy record, in its results
      or in snapshots. The form's Credentials section says what was saved.
+   The dropdowns follow this instance: Refresh Lists, Install and Update Installer add new
+   roles, profiles and themes, rename changed ones, and retire ones deleted from Fluxx.
+   Unticking a role or profile is applied by the next Install (buttons and the PDC
+   elements follow the ticked list exactly). Two things need a person, and Validate,
+   Install, Update Installer and the list view all warn about them:
+   - **A ticked role, profile or theme that was deleted from Fluxx** is ignored. Untick
+     it (and choose another if none is left). A button left with only deleted roles
+     gets the role its workflow's other buttons use.
+   - **An unticked Grant Request Theme** keeps the PDC component on its forms, since
+     Install never removes anything. Tick it again, or remove the PDC group from
+     that form by hand.
 3. Click a button:
 
    | Button | What it does |
@@ -78,7 +89,7 @@ The deploy model stays in place after install. To remove PDC completely, click
    | **Install** | Installs and updates. Installs what's missing, restores what was soft-deleted (same id, so saved answers keep working), and overwrites anything PDC owns that differs from the repo. To move to another release, change `repo_ref` and click Install. Never removes anything: methods, states or buttons PDC didn't ship belong to whoever built them. |
    | **Uninstall** | Removes what PDC owns, soft-deleting it as Fluxx does: PDC's fields, methods, states and buttons, its elements on forms and its block in the `granted` hook, and then the three PDC models with their themes, workflows and forms. Fluxx removes a model's records and other settings with it. Grant forms aren't edited: each active one gets a "(PDC Removed)" copy without PDC, switched on, and the form with PDC is switched off. Lists anything it isn't sure about for review. Restore Previous brings the configuration back; it doesn't restore records. |
    | **Restore Previous** | Puts every PDC component back the way it was before the last Install, Uninstall or Restore. Clicking it twice undoes the restore. |
-   | **Refresh Lists** | Reloads the role, profile and theme dropdowns. |
+   | **Refresh Lists** | Reloads the role, profile and theme dropdowns. Install and Update Installer do this too. |
    | **Update Installer** | Updates the deploy model itself from the repo. |
 
    Validate statuses:

@@ -72,8 +72,12 @@ prev = read.call('previous_configuration')
 meta = prev.is_a?(Hash) ? prev['meta'] : nil
 out['restore_point'] = meta ? { 'label' => meta['label'], 'when' => when_of.call(meta['taken_at']) } : nil
 
+# Choices that no longer fit (a role, profile or theme deleted from Fluxx)
+out['choice_warnings'] = lib ? (lib[:choice_warnings].call(model, nil) rescue []) : []
+
 # One headline: the worst thing first
 needs = []
+needs << 'untick what was deleted from Fluxx (see Results)' if out['choice_warnings'].any?
 needs << 'choose a PDC Environment' if env_label.nil?
 needs << 'enter the PDC credentials' if out['credentials'].any? { |c| c['state'] != 'set' }
 needs << "#{last['title']} failed" if last && last['error']

@@ -401,12 +401,14 @@ install = lambda do |log|
   pick_roles = lambda do |wf|
     next chosen_roles.map(&:id).sort if chosen_roles.any?
     ids = MachineEventRole.where(machine_event_id: MachineEvent.where(machine_workflow_id: wf.id, deleted_at: nil).pluck(:id)).pluck(:role_id)
+    ids &= Role.where(id: ids.uniq, deleted_at: nil).pluck(:id)   # a role deleted from Fluxx isn't one to copy
     common = ids.group_by { |i| i }.max_by { |_, v| v.size }
     common ? [common.first] : []
   end
   roles_wrong = lambda do |ev, wf|
     have = MachineEventRole.where(machine_event_id: ev.id).pluck(:role_id).uniq.sort
-    chosen_roles.any? ? have != chosen_roles.map(&:id).sort : have.empty?
+    # With none chosen, a button whose only roles were deleted from Fluxx has none
+    chosen_roles.any? ? have != chosen_roles.map(&:id).sort : Role.where(id: have, deleted_at: nil).empty?
   end
   b['events'].each do |e|
     theme = ModelTheme.where(model_type: e['model_type'], name: e['theme'], deleted_at: nil).first
@@ -615,7 +617,8 @@ install = lambda do |log|
     done.each { |status, what| log[status] << "#{what} @ #{target}" }
   end
 
-  { 'mode' => "from #{lib[:repo_label].call(model)}" }
+  # Choices that no longer fit (a deleted role, an unticked theme still on a form)
+  { 'mode' => "from #{lib[:repo_label].call(model)}", 'warnings' => lib[:choice_warnings].call(model, scope) }
 end
 
 # Worked out before anything changes, so the forms it touches are in the snapshot

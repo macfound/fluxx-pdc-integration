@@ -375,7 +375,9 @@ result =
       existing = MachineEvent.where(machine_workflow_id: workflow.id, button_name: e['button_name'], deleted_at: nil).first
       if existing
         have = MachineEventRole.where(machine_event_id: existing.id).pluck(:role_id).uniq.sort
-        if roles.any? && (have.empty? || (chosen.any? && have != chosen.map(&:id).sort))
+        # (a role deleted from Fluxx doesn't count: nobody can click with it)
+        live_have = Role.where(id: have, deleted_at: nil).pluck(:id)
+        if roles.any? && (live_have.empty? || (chosen.any? && have != chosen.map(&:id).sort))
           MachineEventRole.where(machine_event_id: existing.id).destroy_all
           roles.each { |rl| MachineEventRole.create!(machine_event_id: existing.id, role_id: rl.id) }
           log << "button #{e['button_name']}: roles set to #{roles.map(&:name).join(', ')}"
@@ -450,8 +452,12 @@ entries = log.map do |line|
 end
 record =
   begin
-    model.dyn_invoke_for(:"PDC Installer Lib")[:results_record].call(
-      'Installer update', "from #{source_label.call}", entries, result['error'] ? { 'error' => result['error'] } : {})
+    boot_lib = model.dyn_invoke_for(:"PDC Installer Lib")
+    # Choices on this record that no longer fit (e.g. a role deleted from Fluxx)
+    warnings = (boot_lib[:choice_warnings].call(model, nil) rescue [])
+    extra = result['error'] ? { 'error' => result['error'] } : {}
+    extra['warnings'] = warnings if warnings.any?
+    boot_lib[:results_record].call('Installer update', "from #{source_label.call}", entries, extra)
   rescue => e
     { 'title' => 'Installer update', 'mode' => "from #{source_label.call}", 'ran_at' => Time.now.utc.iso8601,
       'error' => [result['error'], "#{e.class}: #{e.message}"].compact.join(' / '),

@@ -776,6 +776,42 @@ lib[:selected_themes] = lambda do |deploy_model, attr|
   lib[:selected_values].call(deploy_model, attr).map { |v| ModelTheme.where(id: v.to_i, deleted_at: nil).first }.compact
 end
 
+# Warnings about the choices on deploy_model that no longer fit this instance.
+# PDC Populate Options retires the option of a role, profile or theme deleted
+# from Fluxx, but a record that had it ticked keeps the tick, and the
+# selected_* lookups above silently skip it. And a theme that's unticked keeps
+# the PDC component on its forms (Install never removes anything). locations:
+# where the PDC elements are (from locate_elements); worked out when not given.
+lib[:choice_warnings] = lambda do |deploy_model, scope, locations = nil|
+  warnings = []
+  { installer_role: ['Installer Role', :selected_roles], pdc_event_role: ['PDC Event Role', :selected_roles],
+    pdc_grantee_profile: ['PDC Grantee Profile', :selected_profiles], pdc_staff_profile: ['PDC Staff Profile', :selected_profiles],
+    grant_request_themes: ['Grant Request Themes', :selected_themes] }.each do |attr, (label, picker)|
+    values = lib[:selected_values].call(deploy_model, attr)
+    next if values.empty?
+    live_ids = lib[picker].call(deploy_model, attr).map { |r| r.id.to_s }
+    gone = values.reject { |v| live_ids.include?(v) }
+    next if gone.empty?
+    field = ModelAttribute.where(model_type: deploy_model.class.name, name: attr.to_s, deleted_at: nil).first
+    names = gone.map { |v| (field && ModelAttributeValue.where(model_attribute_id: field.id, value: v).first&.description).presence || "id #{v}" }
+    warnings << "#{label}: #{names.join(', ')} no longer #{gone.size == 1 ? 'exists' : 'exist'} in Fluxx, so #{gone.size == 1 ? "it's" : "they're"} ignored. " \
+                "Untick #{gone.size == 1 ? 'it' : 'them'}#{live_ids.empty? ? " and choose another #{label}" : ''}, then save."
+  end
+  if scope
+    locations ||= lib[:locate_elements].call(scope, false).values.flatten
+    gr_type = scope['grant_request']['model_type']
+    chosen = lib[:selected_themes].call(deploy_model, :grant_request_themes).map(&:id)
+    left = locations.select { |l| l['enabled'] && l['model_type'] == gr_type && l['model_theme_id'] && !chosen.include?(l['model_theme_id']) }
+    left.group_by { |l| l['model_theme_id'] }.each do |theme_id, locs|
+      name = ModelTheme.find_by(id: theme_id)&.name || "theme #{theme_id}"
+      forms = locs.map { |l| "stencil #{l['stencil_id']} (#{l['stencil_name'].to_s.strip})" }.uniq.join(', ')
+      warnings << "theme #{name} isn't ticked in Grant Request Themes, but its active form #{forms} still shows grantees the PDC component. " \
+                  "Tick the theme again, or remove the PDC group from that form by hand."
+    end
+  end
+  warnings
+end
+
 # Which PDC this instance talks to. The admin chooses it in the deploy model's
 # PDC Environment field (options from PDC Populate Options); Install writes the
 # matching URL into Get PDC Base URL. Nothing else in Fluxx says whether an

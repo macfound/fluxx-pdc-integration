@@ -1353,8 +1353,8 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "051646cfc0d146e066c1df6bc1692946eec34461ae09b3aa1012562eff9996b9",
-      "unmarked_sha256": "54bc39a240d6aa85ee3cec2499752c989291bd9b19bccdbec405e6357f5fdb2f"
+      "sha256": "a3e417fdad8f3a8818526c5a7a9bc90b8fe058c606ac830688c5ebe30887fa30",
+      "unmarked_sha256": "e2991949afd8f3fa83da1b1a33ab61cf3db54ff93c7246dfce5d408aaf4fbb9c"
     },
     {
       "key": "stencil-container-readonly",
@@ -1363,8 +1363,8 @@
       "host_model_types": [
         "GrantRequest"
       ],
-      "sha256": "b8b36fca13f0504c34fdf0f50946a18a7cad6361d04786dd4ae46858e663a8c9",
-      "unmarked_sha256": "acf6866c30e3100b07950e0d318be8d8693e196375f4092e5577c6797074b828"
+      "sha256": "54e832c0d66427aca431698b85d9eb0eff7c8691cdee128b15efadd42a367d74",
+      "unmarked_sha256": "d3cb946c9c3425a94d7eb1a8efa973449c94c5783819b7b449ae7b50078de8a5"
     },
     {
       "key": "floating-panel",
