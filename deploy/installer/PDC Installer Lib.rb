@@ -300,6 +300,38 @@ lib[:undefined_damage] = lambda do |text|
   t =~ /\A\s*undefined/ || t.include?('>undefined<') ? true : false
 end
 
+# A stencil element's text the way Fluxx's editor leaves it: entities decoded,
+# the marker line dropped, "/>" and " >" written as ">", whitespace runs collapsed.
+# MUST match shape_sha in deploy/tools/pdc_manifest.rb.
+lib[:shape_sha] = lambda do |text, element_regex|
+  t = CGI.unescapeHTML(text.to_s).sub(Regexp.new("^[^\\n]*#{element_regex}[^\\n]*\\n?"), '')
+  t = t.gsub(%r{\s*/?>}, '>').gsub(/\s+/, ' ').strip
+  t.empty? ? nil : Digest::SHA256.hexdigest(t)
+end
+
+# What pdc_copy_reason needs to know about a live element's text.
+lib[:copy_facts] = lambda do |text, element_regex|
+  decoded = CGI.unescapeHTML(text.to_s)
+  {
+    'shape_sha256' => lib[:shape_sha].call(text, element_regex),
+    'undefined_damage' => lib[:undefined_damage].call(text),
+    # Pasted from a rendered page: the Liquid ran, so its tags are gone
+    'liquid_gone' => !(decoded.include?('{%') || decoded.include?('{{')) || decoded.include?('Liquid error')
+  }
+end
+
+# Why an unmarked element that isn't this release's exact text is still PDC's
+# own, so Install may replace it (spec: its manifest or bundle entry). nil
+# when it may be an admin's edit.
+lib[:pdc_copy_reason] = lambda do |facts, spec|
+  shape = facts['shape_sha256']
+  if facts['undefined_damage'] then 'Fluxx turned part of it into "undefined"'
+  elsif spec['liquid'] && facts['liquid_gone'] then 'its Liquid was replaced by rendered page output'
+  elsif shape && shape == spec['shape_sha256'] then 'this release, reformatted by Fluxx'
+  elsif shape && Array(spec['past_shape_sha256']).include?(shape) then 'an earlier PDC release'
+  end
+end
+
 # Fluxx stores checkbox settings as true, "1", "0", etc.
 lib[:truthy] = lambda do |v|
   v == true || v.to_s.strip =~ /\A(1|true|yes|on)\z/i ? true : false
@@ -397,11 +429,10 @@ lib[:locate_elements] = lambda do |scope, include_text = false|
           'parent_groups' => entry['parents'],
           'sha256' => lib[:sha].call(text),
           'sha256_decoded' => lib[:sha].call(decoded),
-          'undefined_damage' => lib[:undefined_damage].call(text),
           'config_problems' => lib[:element_config_problems].call(entry['element'], scope['element_required_config']) +
                                lib[:element_visibility_problems].call(entry['element'], (specs.find { |s| s['id'] == id } || {})['visibility']),
           'profiles' => lib[:profiles_of].call(entry['element'])
-        }.merge(include_text ? { 'text' => text } : {})
+        }.merge(lib[:copy_facts].call(text, scope['markers']['element_regex'])).merge(include_text ? { 'text' => text } : {})
         if entry['trail'].size > 1
           parent = entry['trail'][0..-2].inject(doc) { |n, i| n.is_a?(Hash) ? Array(n['elements'])[i] : nil }
           if parent.is_a?(Hash) && parent['element_type'] == 'group'
@@ -1017,8 +1048,9 @@ lib[:validate] = lambda do |manifest, live, deploy_model|
         # No marker yet, but the content can still be compared with the repo
         # copy minus its marker line.
         same = m['unmarked_sha256'] && [here.first['sha256'], here.first['sha256_decoded']].include?(m['unmarked_sha256'])
+        pdc = !same && lib[:pdc_copy_reason].call(here.first, m)
         why = if same then 'content matches the repo'
-              elsif here.first['undefined_damage'] then 'Fluxx turned part of it into "undefined"; Install replaces it'
+              elsif pdc then "#{pdc}; Install replaces it"
               else 'content differs from the repo'
               end
         row.call('stencil_elements', where, same ? 'UNMARKED' : 'UNMARKED_DIFFERS', ["#{why}; groups: #{groups.first.join(' > ')}"])

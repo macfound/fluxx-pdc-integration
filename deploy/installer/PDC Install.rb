@@ -524,11 +524,16 @@ install = lambda do |log|
       spec = specs.find { |s| s['id'] == id }
       node = here.first['trail'].inject(doc) { |n, i| n['elements'][i] }
       text = lib[:element_text].call(node)
-      if here.first['via'] == 'fingerprint' && ![lib[:sha].call(text), lib[:sha].call(CGI.unescapeHTML(text))].include?(spec['unmarked_sha256']) &&
-         !lib[:undefined_damage].call(text)
-        log['unmarked and edited (left alone; review, then replace by hand)'] << "#{id} @ stencil #{stencil_id} (#{st.name.to_s.strip})"
-        skipped << id
-        next
+      # An unmarked copy is replaced only when it's this release's text or
+      # provably PDC's own (an earlier release, Fluxx's reformatting or damage)
+      pdc_copy = nil
+      if here.first['via'] == 'fingerprint' && ![lib[:sha].call(text), lib[:sha].call(CGI.unescapeHTML(text))].include?(spec['unmarked_sha256'])
+        pdc_copy = lib[:pdc_copy_reason].call(lib[:copy_facts].call(text, markers['element_regex']), spec)
+        unless pdc_copy
+          log['unmarked and edited (left alone; review, then replace by hand)'] << "#{id} @ stencil #{stencil_id} (#{st.name.to_s.strip})"
+          skipped << id
+          next
+        end
       end
       text_ok = lib[:sha].call(text) == lib[:sha].call(spec['text'])
       views = (scope['stencil_elements'].find { |s| s['id'] == id } || {})['visibility']
@@ -541,7 +546,7 @@ install = lambda do |log|
       cfg['text'] = spec['text']
       required_config.each { |k, want| cfg[k] = want ? true : '0' unless lib[:truthy].call(cfg[k]) == want }
       lib[:set_element_visibility].call(node, views)
-      done << ['wrote element', "#{id} [#{[text_ok ? nil : 'text', *bad].compact.join(', ')}]"]
+      done << ['wrote element', "#{id} [#{[text_ok ? nil : pdc_copy ? "text (was #{pdc_copy})" : 'text', *bad].compact.join(', ')}]"]
     end
     # The PDC Grantee Profiles on every PDC element, its group, and the native
     # fields the PDC code reads (elements get them too, since admins move them
