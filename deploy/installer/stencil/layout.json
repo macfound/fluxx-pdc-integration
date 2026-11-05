@@ -1,7 +1,8 @@
 {
-  "_comment": "The deploy model's form layout. PDC Bootstrap Deploy Model overwrites the model's existing form stencil with this. No other installer method edits the stencil; they only write field values that this layout renders. Each element is a group (with elements), a field (an attribute on the deploy model; its config adds Fluxx field settings, such as the checkbox list), a text element whose text is read from text_path in the repo, or raw: an element exactly as Fluxx stores it (uids are regenerated and filters pointed at the deploy model).",
+  "_comment": "The deploy model's form layout. PDC Bootstrap Deploy Model overwrites the model's existing form stencil with this. No other installer method edits the stencil; they only write field values that this layout renders. Each element is a group (with elements), a field (an attribute on the deploy model; its config adds Fluxx field settings, such as the checkbox list), a text element whose text is read from text_path in the repo (list_only: shown only in the list view, like the PDC Integration Map's first element), or raw: an element exactly as Fluxx stores it (uids are regenerated and filters pointed at the deploy model).",
 
   "elements": [
+    { "text_path": "deploy/installer/stencil/List.liquid", "list_only": true },
     { "group": "Settings", "elements": [
       { "field": "repo_url",            "label": "Repo URL" },
       { "field": "repo_ref",            "label": "Repo Ref (branch or tag)" },

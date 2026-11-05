@@ -306,9 +306,13 @@ result =
         { 'element_type' => 'attribute', 'name' => el['field'], 'label' => el['label'], 'config' => config,
           'visibility' => vis, 'styling' => { 'alignment' => 'left' }, 'uid' => SecureRandom.uuid }
       else
+        # list_only: shown in the list view and nowhere else, as Fluxx stores
+        # it (visible_list, without visible_show / visible_form)
+        vis = visibility.call
+        vis = vis.reject { |k, _| k.start_with?('visible_') }.merge('visible_list' => true) if el['list_only']
         { 'element_type' => 'text', 'name' => 'text',
           'config' => { 'text' => fetch.call(el['text_path']), 'strip_html' => '0', 'allow_script' => '0' },
-          'visibility' => visibility.call, 'styling' => { 'alignment' => 'left' }, 'uid' => SecureRandom.uuid }
+          'visibility' => vis, 'styling' => { 'alignment' => 'left' }, 'uid' => SecureRandom.uuid }
       end
     end
     new_elements = layout['elements'].map { |el| build.call(el) }

@@ -197,6 +197,16 @@ settings fields and the results block. It isn't backed up; the layout lives in t
 Nothing else edits this stencil. Change the form by editing `layout.json` in the repo,
 not in Fluxx, or the next Update Installer replaces your edits.
 
+The same stencil holds the **list view** card: the first element in `layout.json` is
+marked `list_only` (Fluxx's `visible_list`, as on the PDC Integration Map), so it shows
+only in the list. `PDC_List_Summary` gathers what someone looking after the integration
+checks first, and [installer/stencil/List.liquid](installer/stencil/List.liquid) renders
+it: an overall status (Healthy, Check again, Needs attention, Not installed yet), the
+PDC Environment, the repo ref and installer commit, the last Validate (and whether
+anything ran since), the last Install / Uninstall / Restore, whether each credential
+has been entered (never its value), how many grant themes and active Integration Maps
+use PDC, and what Restore Previous would go back to.
+
 ## Advanced configuration
 
 - **Which code is installed.** `repo_url` and `repo_ref` at the top of Before New say

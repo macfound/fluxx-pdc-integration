@@ -1,0 +1,24 @@
+<div class="pdc-list"><!-- PDC deploy model list view. Written by PDC Bootstrap Deploy Model from layout.json: edit it in the repo, keep every tag on one line and everything inside this div, never use the rich text editor. -->
+<style>
+.pdc-list { font-family: inherit; font-size: 12px; line-height: 1.5; }
+.pdc-list .pdc-head { font-size: 13px; margin-bottom: 2px; }
+.pdc-list .pdc-pill { display: inline-block; border-radius: 10px; padding: 0 7px; margin: 1px 3px 1px 0; font-size: 11px; white-space: nowrap; }
+.pdc-list .pdc-good { background: #e3f4e5; color: #1e6b2a; }
+.pdc-list .pdc-done { background: #e3ecfa; color: #1f4e9a; }
+.pdc-list .pdc-info { background: #f1f1f1; color: #444; }
+.pdc-list .pdc-bad { background: #fbe4e2; color: #9b2218; }
+.pdc-list .pdc-k { color: #777; display: inline-block; min-width: 72px; }
+.pdc-list .pdc-detail { color: #555; }
+.pdc-list .pdc-warn { color: #9b2218; }
+.pdc-list code { font-size: 11px; }
+</style>
+{% assign s = model.PDC_List_Summary %}
+<div class="pdc-head"><strong>PDC Integration</strong> <span class="pdc-pill pdc-{{ s.environment.tone }}">{{ s.environment.label | escape }}</span> <span class="pdc-pill pdc-{{ s.status.tone }}">{{ s.status.label | escape }}</span></div>
+<div class="pdc-detail">{{ s.status.detail | escape }}</div>
+<div><span class="pdc-k">Code</span><code>{{ s.version.ref | escape }}</code>{% if s.version.commit %} @ <code>{{ s.version.commit | escape }}</code>{% endif %}</div>
+<div><span class="pdc-k">Validated</span>{% if s.check %}{{ s.check.when | escape }} {% if s.check.error %}<span class="pdc-pill pdc-bad">failed</span>{% elsif s.check.issues == 0 %}<span class="pdc-pill pdc-good">{{ s.check.matches }} match</span>{% else %}<span class="pdc-pill pdc-bad">{{ s.check.issue_labels | escape }}</span>{% endif %}{% if s.check.stale %}<br><span class="pdc-k"></span><span class="pdc-warn">{{ s.check.stale | escape }} ran since</span>{% endif %}{% else %}<em>never</em>{% endif %}</div>
+<div><span class="pdc-k">Last change</span>{% if s.last_change %}{{ s.last_change.title | escape }} &middot; {{ s.last_change.when | escape }} {% if s.last_change.error %}<span class="pdc-pill pdc-bad">failed</span>{% else %}<span class="pdc-pill pdc-done">{{ s.last_change.changed }} changed</span>{% if s.last_change.problems != 0 %}<span class="pdc-pill pdc-bad">{{ s.last_change.problems }} to review</span>{% endif %}{% endif %}{% else %}<em>none yet</em>{% endif %}</div>
+<div><span class="pdc-k">Credentials</span>{% for c in s.credentials %}<span class="pdc-pill pdc-{{ c.tone }}">{{ c.label | escape }}: {{ c.state | escape }}</span>{% endfor %}</div>
+<div><span class="pdc-k">In use</span>{{ s.themes }} grant theme{% if s.themes != 1 %}s{% endif %}{% if s.active_maps != nil %} &middot; {{ s.active_maps }} active map{% if s.active_maps != 1 %}s{% endif %}{% endif %}</div>
+{% if s.restore_point %}<div><span class="pdc-k">Restore to</span>{{ s.restore_point.label | escape }} &middot; {{ s.restore_point.when | escape }}</div>{% endif %}
+</div>
