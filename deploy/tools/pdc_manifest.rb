@@ -187,13 +187,12 @@ def rehash!(manifest)
         entry['sha256'] = sha(text)
         # Same content without its marker line, for copies not yet marked in Fluxx.
         entry['unmarked_sha256'] = text && sha(text.sub(Regexp.new("^[^\\n]*#{scope['markers']['element_regex']}[^\\n]*\\n?"), ''))
-        # Shapes of this and every earlier release, and whether the text uses
-        # Liquid, so Install can tell PDC's own unmarked copies from admin edits.
+        # Shapes of this and every earlier release, so Install can tell PDC's
+        # own unmarked copies from admin edits.
         # Without git, the earlier releases recorded last time are kept.
         entry['shape_sha256'] = text && shape_sha(text)
         past = past_texts(entry['path'])
         entry['past_shape_sha256'] = (past.map { |t| shape_sha(t) }.compact.uniq - [entry['shape_sha256']]).sort if past
-        entry['liquid'] = text.to_s.include?('{%') || text.to_s.include?('{{')
         problems << "#{entry['path']} is missing" if entry['sha256'].nil?
         next
       end
@@ -395,7 +394,7 @@ def build_bundle(manifest)
     'shared_slices' => manifest['shared_slices'].map { |x| x.slice('key', 'model_type', 'state', 'field').merge('body' => body.call(x['body_path'])) },
     'stencil_elements' => manifest['stencil_elements'].map do |el|
       spec = scope['stencil_elements'].find { |sp| sp['id'] == el['id'] } || {}
-      el.slice('key', 'id', 'host_model_types', 'sha256', 'unmarked_sha256', 'shape_sha256', 'past_shape_sha256', 'liquid').merge('text' => read_repo(spec['path'] || el['path']).to_s.strip)
+      el.slice('key', 'id', 'host_model_types', 'sha256', 'unmarked_sha256', 'shape_sha256', 'past_shape_sha256').merge('text' => read_repo(spec['path'] || el['path']).to_s.strip)
     end
   }
 end

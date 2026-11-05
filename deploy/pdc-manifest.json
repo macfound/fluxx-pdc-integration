@@ -1333,8 +1333,7 @@
         "bc3781bcb704ac369ac85e07a5a0c1b0f60d837b1400b0de45f0d7008193a4b3",
         "dec823a6b4f0172d3b8e0fc5283f516dce2d73e04190bacaf9b0a5a2ff1ba95c",
         "e0a32b728efca2448d9578d46887952c366e00a6a9252377c6bf0b6aa25feb48"
-      ],
-      "liquid": false
+      ]
     },
     {
       "key": "fluxx-card-api",
@@ -1348,8 +1347,7 @@
       "shape_sha256": "1079798b962c333cf7b9a5d4084f2a34a23e4420d016e9aa883485a7992446a3",
       "past_shape_sha256": [
         "58cec3f62243a9104defd10d41fbe8a5e2b50e7551b7e9f46d03459f99a28215"
-      ],
-      "liquid": false
+      ]
     },
     {
       "key": "oauth-client",
@@ -1364,8 +1362,7 @@
       "past_shape_sha256": [
         "6e2638a72c7eff97c6e59d3b3949a51567e20bf2a2b5db5a80d5bbbed4feeb31",
         "e31f16bd7ab95fc886a54c365106571f3ea18119e4f1b9c2ef37568123fdce2b"
-      ],
-      "liquid": false
+      ]
     },
     {
       "key": "stencil-container",
@@ -1387,8 +1384,7 @@
         "a306cae03b36ba8d9c9f4a1ab5846021236b515cd8ff64ab25e74d540fe1e16f",
         "a7dbff7f7a0c54390a7868fd66e83fb3f1d728de2acd76f5a1824c14bb57de58",
         "a9aea557eb741902ac6d77f43ad0577fe905b2e7227257745eb765b10997dd7d"
-      ],
-      "liquid": true
+      ]
     },
     {
       "key": "stencil-container-readonly",
@@ -1405,8 +1401,7 @@
         "73e5221c3808f90a20e771ae393e3a9fd2bdf1bd322797d256177b28bb91c0a1",
         "ac24314f347c83eb71f7c2b1cfda578b7f364e580db6c8df22c5a075d50b8874",
         "f17e9adb45821c040241c7a4481abc99f2fe75940c3d256bcbc01d7ae06b73fe"
-      ],
-      "liquid": true
+      ]
     },
     {
       "key": "floating-panel",
@@ -1423,8 +1418,7 @@
         "b06b98e222acce1ee610f2061cc05d7ff5acfa88e8562833f17434a39ae9f600",
         "bd9d2bda4343f89b5917490a616cf31526f955b23b11210d49574fb5c21b275a",
         "cceb5cb6f50ab647a0978c9d82ab55c1fc270467b47aac7b311cf8f56f7ed5a4"
-      ],
-      "liquid": false
+      ]
     },
     {
       "key": "oauth-callback",
@@ -1439,8 +1433,7 @@
       "past_shape_sha256": [
         "6b7309d2efdcc8106647aca337ceca9693e7e15219c838e8f15a74576b6ccde6",
         "e4a25613d697224ed2787f681fa1fcb67543d0cf163a0ec3484af59946e2306f"
-      ],
-      "liquid": false
+      ]
     }
   ]
 }

@@ -311,12 +311,9 @@ end
 
 # What pdc_copy_reason needs to know about a live element's text.
 lib[:copy_facts] = lambda do |text, element_regex|
-  decoded = CGI.unescapeHTML(text.to_s)
   {
     'shape_sha256' => lib[:shape_sha].call(text, element_regex),
-    'undefined_damage' => lib[:undefined_damage].call(text),
-    # Pasted from a rendered page: the Liquid ran, so its tags are gone
-    'liquid_gone' => !(decoded.include?('{%') || decoded.include?('{{')) || decoded.include?('Liquid error')
+    'undefined_damage' => lib[:undefined_damage].call(text)
   }
 end
 
@@ -326,7 +323,6 @@ end
 lib[:pdc_copy_reason] = lambda do |facts, spec|
   shape = facts['shape_sha256']
   if facts['undefined_damage'] then 'Fluxx turned part of it into "undefined"'
-  elsif spec['liquid'] && facts['liquid_gone'] then 'its Liquid was replaced by rendered page output'
   elsif shape && shape == spec['shape_sha256'] then 'this release, reformatted by Fluxx'
   elsif shape && Array(spec['past_shape_sha256']).include?(shape) then 'an earlier PDC release'
   end
@@ -1367,8 +1363,10 @@ end
 
 # Text documents are shown as HTML in Fluxx, and snapshots hold form HTML and
 # scripts, so the JSON is stored HTML-escaped inside <pre>: it displays as
-# readable JSON and nothing in it runs.
-lib[:snapshot_text] = lambda { |snap| "<pre>#{CGI.escapeHTML(JSON.pretty_generate(snap))}</pre>" }
+# readable JSON and nothing in it runs. Fluxx also runs a document's Liquid
+# when it's viewed or downloaded (UAT, 2026-11-05: every {% %} in a snapshot
+# came out rendered), so "{" is stored as &#123; too.
+lib[:snapshot_text] = lambda { |snap| "<pre>#{CGI.escapeHTML(JSON.pretty_generate(snap)).gsub('{', '&#123;')}</pre>" }
 lib[:snapshot_parse] = lambda do |text|
   JSON.parse(CGI.unescapeHTML(text.to_s.sub(/\A\s*<pre>/, '').sub(%r{</pre>\s*\z}, '')))
 end
