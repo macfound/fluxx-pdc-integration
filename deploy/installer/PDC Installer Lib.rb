@@ -305,6 +305,9 @@ end
 # MUST match shape_sha in deploy/tools/pdc_manifest.rb.
 lib[:shape_sha] = lambda do |text, element_regex|
   t = CGI.unescapeHTML(text.to_s).sub(Regexp.new("^[^\\n]*#{element_regex}[^\\n]*\\n?"), '')
+  # Fluxx writes some named entities as the characters (&hellip; as the
+  # ellipsis), and CGI only decodes the basic ones, so both are left out
+  t = t.gsub(/&[a-zA-Z][a-zA-Z0-9]*;/, '').gsub(/[^\x00-\x7F]/, '')
   t = t.gsub(%r{\s*/?>}, '>').gsub(/\s+/, ' ').strip
   t.empty? ? nil : Digest::SHA256.hexdigest(t)
 end
