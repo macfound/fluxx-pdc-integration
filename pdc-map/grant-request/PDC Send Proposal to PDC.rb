@@ -190,11 +190,13 @@ field_mappings.each do |mapping|
 	next if app_form_field_id.nil?
 
 	# What this mapping sends for this grant: the Fluxx field, or its related
-	# field when it's a record; a record still left sends its Fluxx id, and an
-	# empty value nil (see Value For Grant on PDC Mapped Field). A field that
-	# can't be read sends nil too: one field never stops the proposal.
+	# field when it's a record; a record still left sends its Fluxx id (see
+	# Value For Grant on PDC Mapped Field). An empty value, or a field that
+	# can't be read, is left out: the PDC takes only string values, and one
+	# field never stops the proposal.
 	mapping.instance_variable_set(:@pdc_grant, model)
 	field_value_str = (mapping.dyn_invoke_for(:"Value For Grant") rescue nil)
+	next if field_value_str.nil?
 
 	field_values << {
 		applicationFormFieldId: app_form_field_id,
