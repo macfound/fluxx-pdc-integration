@@ -7,6 +7,7 @@
 #   version: 1,
 #   application_form_id: Integer,
 #   generated_at: ISO8601 string,
+#   pdc_base_url: String|null,             # the PDC API this instance uses (Get PDC Base URL)
 #   mappings: [
 #     {
 #       pdc_field_short_code: String,       # matches PDC API baseFieldShortCode
@@ -173,5 +174,6 @@ payload = {
   version: 1,
   application_form_id: model.id,
   generated_at: Time.current.iso8601,
+  pdc_base_url: (model.dyn_invoke_for(:"Get PDC Base URL").to_s.presence rescue nil),
   mappings: resolved_mappings
 }
