@@ -458,7 +458,7 @@
       "model_type": "MacModelTypeDynPdcConsent",
       "name": "grant_data_at_time_of_transmission",
       "description": "Grant Data at Time of Transmission",
-      "attribute_type": "string",
+      "attribute_type": "text",
       "multi_allowed": false,
       "value_model_type": null
     },
@@ -627,7 +627,7 @@
       "model_type": "GrantRequest",
       "name": "PDC Send Proposal to PDC",
       "method_type": "method",
-      "body_sha256": "6ce32f32cd48760165e643a633291c56abc49fb75f72472dbce059138f2ad6ee",
+      "body_sha256": "fde1392176b4915cf7e8e66644da8c96969593ea84e6297eba2c32edb1e89022",
       "body_path": "pdc-map/grant-request/PDC Send Proposal to PDC.rb"
     },
     {

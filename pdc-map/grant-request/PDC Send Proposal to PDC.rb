@@ -129,6 +129,7 @@ end
 
 # Create field values from mappings
 field_values = []
+sent_fields = {} # PDC short code => value, for the consent form's record of what was sent
 app_form_fields = {}
 position = 0
 
@@ -204,6 +205,7 @@ field_mappings.each do |mapping|
 		value: field_value_str,
 		goodAsOf: Time.current.iso8601
 	}
+	sent_fields[pdc_field_code] = field_value_str
 	# logger << "  Final field value to send: #{field_value_str.inspect}"
 	position += 1
 end
@@ -234,6 +236,25 @@ begin
   when "201"
     # Success
     version_data = JSON.parse(response.body)
+
+	# Record what was sent on the consent that allowed it, beside the copy
+	# Stamp Consent kept at consent. The data is already in the PDC, so a
+	# consent that can't be written never fails the send.
+	begin
+		consent_record = grantee_consent.last
+		if consent_record.respond_to?(:grant_data_at_time_of_transmission=)
+			consent_record.update_attributes(grant_data_at_time_of_transmission: JSON.pretty_generate(
+				'sent_at' => Time.current.iso8601,
+				'pdc_base_url' => base_url,
+				'pdc_proposal_id' => version_data['proposalId'],
+				'pdc_proposal_version_id' => version_data['id'],
+				'application_form_id' => application_form_id.to_i,
+				'fields' => sent_fields
+			))
+		end
+	rescue => e
+		nil
+	end
 
 	# Store the proposal proposal ID
 	model.update_attributes(pdc_proposal_id: version_data['proposalId'])
