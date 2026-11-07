@@ -687,131 +687,16 @@
 
         var FIELDS_PER_PAGE = 50;
 
-        // ── PDC environment and proposal paging ──────────────────
-        // The PDC this instance talks to comes with the field mapping
-        // (Get PDC Base URL on the Integration Map, set by the deploy
-        // record's PDC Environment). Only the PDC's own API hosts are
-        // accepted, since the request carries the grantee's token.
-        var PDC_API_DEFAULT = "https://api.philanthropydatacommons.org";
-        var PDC_API_PATTERN =
-            /^https:\/\/api(\.sandbox)?\.philanthropydatacommons\.org$/;
-        var PROPOSALS_PER_PAGE = 25;
-
-        function pdcApiBase() {
-            var mappingData = loadFieldMappings();
-            var url =
-                mappingData && typeof mappingData.pdc_base_url === "string"
-                    ? mappingData.pdc_base_url.replace(/\/+$/, "")
-                    : "";
-            return PDC_API_PATTERN.test(url) ? url : PDC_API_DEFAULT;
-        }
-
-        // The PDC lists proposals newest first; page is the last page
-        // loaded, seen the proposal ids shown (a proposal created while
-        // paging shifts later pages by one).
-        var proposalPaging = { page: 0, total: 0, seen: {}, loading: false };
-
-        function fetchProposalPage(page) {
-            proposalPaging.loading = true;
-            return oauth
-                .authenticatedFetch(
-                    pdcApiBase() +
-                        "/proposals?_page=" +
-                        page +
-                        "&_count=" +
-                        PROPOSALS_PER_PAGE,
-                    {
-                        method: "GET",
-                        headers: { "Content-Type": "application/json" },
-                    },
-                )
-                .then(function (response) {
-                    if (!response.ok)
-                        throw new Error(
-                            "Failed to load proposals: " + response.status,
-                        );
-                    return response.json();
-                })
-                .then(function (data) {
-                    if (page === 1) proposalPaging.seen = {};
-                    proposalPaging.page = page;
-                    proposalPaging.total = Number(data.total) || 0;
-                    return data;
-                })
-                .finally(function () {
-                    proposalPaging.loading = false;
-                });
-        }
-
-        function shownProposalCount() {
-            return Object.keys(proposalPaging.seen).length;
-        }
-
-        // The "Load more" row at the end of the list, while the PDC has
-        // proposals not shown yet.
-        function updateLoadMore(container) {
-            var old = container.querySelector(".pdc-load-more");
-            if (old) old.parentNode.removeChild(old);
-            var shown = shownProposalCount();
-            if (
-                shown >= proposalPaging.total ||
-                proposalPaging.page * PROPOSALS_PER_PAGE >= proposalPaging.total
-            )
-                return;
-            var row = document.createElement("div");
-            row.className = "pdc-load-more";
-            var btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "pdc-button pdc-load-more-btn";
-            btn.textContent =
-                "Load more proposals (" +
-                shown +
-                " of " +
-                proposalPaging.total +
-                " shown)";
-            btn.addEventListener("click", function () {
-                if (proposalPaging.loading) return;
-                btn.disabled = true;
-                btn.textContent = "Loading...";
-                announce("Loading more proposals...");
-                fetchProposalPage(proposalPaging.page + 1)
-                    .then(function (data) {
-                        renderEntries(data, container, true);
-                    })
-                    .catch(function () {
-                        announce(
-                            "Failed to load more proposals. Please try again.",
-                        );
-                        updateLoadMore(container);
-                    });
-            });
-            row.appendChild(btn);
-            container.appendChild(row);
-        }
-
-        function renderEntries(data, container, append) {
-            if (!append) container.innerHTML = "";
-            var entries = (data.entries || []).filter(function (entry) {
-                if (proposalPaging.seen[entry.id]) return false;
-                proposalPaging.seen[entry.id] = true;
-                return true;
-            });
-            if (!append && entries.length === 0) {
+        function renderEntries(data, container) {
+            container.innerHTML = "";
+            if (!data.entries || data.entries.length === 0) {
                 container.innerHTML =
                     '<div class="pdc-no-results" role="status">No entries found</div>';
                 announce("No entries found");
                 return;
             }
-            announce(
-                (append
-                    ? entries.length + " more proposal entries loaded. "
-                    : "") +
-                    shownProposalCount() +
-                    " of " +
-                    proposalPaging.total +
-                    " proposal entries shown",
-            );
-            entries.forEach(function (entry) {
+            announce(data.entries.length + " proposal entries loaded");
+            data.entries.forEach(function (entry) {
                 var el = document.createElement("div");
                 el.className = "pdc-entry-item";
                 el.setAttribute("role", "listitem");
@@ -874,8 +759,6 @@
                 el.appendChild(content);
                 container.appendChild(el);
             });
-            applySearchFilter();
-            updateLoadMore(container);
         }
 
         function renderVersions(container, versions) {
@@ -1356,7 +1239,21 @@
                 launchBtn.disabled = true;
                 launchBtn.textContent = "Retrieving Proposals...";
                 announce("Retrieving proposals from PDC...");
-                fetchProposalPage(1)
+                oauth
+                    .authenticatedFetch(
+                        "https://api.philanthropydatacommons.org/proposals",
+                        {
+                            method: "GET",
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    )
+                    .then(function (response) {
+                        if (!response.ok)
+                            throw new Error(
+                                "Failed to load proposals: " + response.status,
+                            );
+                        return response.json();
+                    })
                     .then(function (data) {
                         // console.log('[PDC] Proposals loaded:', (data.entries && data.entries.length) || 0, 'entries');
 
@@ -1480,14 +1377,10 @@
 
         /* ── Search (delegation) ──────────────────────────────────── */
         var searchTimeout = null;
-
-        // Hides the loaded entries that don't match the search box; also
-        // run on entries added by "Load more". Returns how many show.
-        function applySearchFilter() {
-            var searchInput = $("searchInput");
-            var query = searchInput
-                ? searchInput.value.toLowerCase().trim()
-                : "";
+        document.body.addEventListener("input", function (e) {
+            var searchInput = findDelegateTarget(e, "searchInput");
+            if (!searchInput) return;
+            var query = searchInput.value.toLowerCase().trim();
             var items = document.querySelectorAll(".pdc-entry-item");
             var visibleCount = 0;
             items.forEach(function (item) {
@@ -1496,14 +1389,6 @@
                 item.classList.toggle("hidden", hidden);
                 if (!hidden) visibleCount++;
             });
-            return visibleCount;
-        }
-
-        document.body.addEventListener("input", function (e) {
-            var searchInput = findDelegateTarget(e, "searchInput");
-            if (!searchInput) return;
-            var query = searchInput.value.toLowerCase().trim();
-            var visibleCount = applySearchFilter();
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(function () {
                 if (query) {
