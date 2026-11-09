@@ -1801,7 +1801,7 @@
       "model_type": "GrantRequest",
       "name": "PDC Get Last Consent Response",
       "method_type": "method",
-      "body": "# Find all consent forms related to the current model using consent.grant_or_request_id.id == model.id\n# since grant_or_request_id is a virtual attribute, we filter in Ruby after fetching all relevant records\nrelated_consent_forms = []\ngrants_on_org = GrantRequest.where(program_organization_id: model.program_organization.id).sort_by { | request | request.created_at }.reverse\n\ngrants_on_org.each do | request |\n    related_consent_forms << request.dyn_invoke_for(\"PDC Safe Consent Form Lookup\")\nend\n\nlatest_consent = related_consent_forms.compact.first\nif !latest_consent.blank?\n    latest_consent.first.consent_type\nelse\n    nil\nend\n"
+      "body": "# The latest consent answer on the organization's newest grant that has one, or nil.\n# PDC Safe Consent Form Lookup gives each grant's consents with the latest answered last.\ngrants_on_org = GrantRequest.where(program_organization_id: model.program_organization.id).sort_by { | request | request.created_at }.reverse\n\nlatest_consent = nil\ngrants_on_org.each do | request |\n    latest_consent = Array(request.dyn_invoke_for(\"PDC Safe Consent Form Lookup\")).reverse.find { |c| c.consent_type.present? }\n    break if latest_consent\nend\n\nlatest_consent ? latest_consent.consent_type : nil\n"
     },
     {
       "key": "GrantRequest#PDC Get Proposal by ID from PDC",
@@ -1815,7 +1815,7 @@
       "model_type": "GrantRequest",
       "name": "PDC Safe Consent Form Lookup",
       "method_type": "method",
-      "body": "begin\n    model.rd_tab_dyn_models(\"MacModelTypeDynPdcConsent\")\nrescue NoMethodError => e\n    if e.message.include?(\"collect\") && e.message.include?(\"nil:NilClass\")\n       []\n    else\n        raise\n    end\nend\n"
+      "body": "# PDC Safe Consent Form Lookup\n# This grant's PDC Consent records, deleted ones left out, ordered by last update so .last is the\n# one most recently answered. Read from the database: the related-data tab (rd_tab_dyn_models)\n# can include deleted records and misses a consent made earlier in the same request, which let\n# the After Save hook make one consent per save of a new grant. Its records are still merged in,\n# in case a link is stored somewhere the query below doesn't look.\nlink = ModelAttribute.where(model_type: 'MacModelTypeDynPdcConsent', name: 'grant_or_request_id', deleted_at: nil).first\nids = link ? ModelAttributeChoice.where(model_attribute_id: link.id).where('model_value_id = :id OR integer_value = :id', id: model.id).pluck(:model_id) : []\nconsents = MacModelTypeDynPdcConsent.where(id: ids, deleted_at: nil).to_a\n\ntab = begin\n    model.rd_tab_dyn_models(\"MacModelTypeDynPdcConsent\")\nrescue NoMethodError => e\n    raise unless e.message.include?(\"collect\") && e.message.include?(\"nil:NilClass\")\n    []\nend\nArray(tab).each do |c|\n    consents << c if c && (!c.respond_to?(:deleted_at) || c.deleted_at.nil?) && consents.none? { |k| k.id == c.id }\nend\n\nconsents.sort_by { |c| [c.updated_at || c.created_at || Time.at(0), c.id] }\n"
     },
     {
       "key": "GrantRequest#PDC Send Proposal to PDC",
@@ -2420,7 +2420,7 @@
       "model_type": "GrantRequest",
       "state": "granted",
       "field": "unsafe_after_enter",
-      "body": "###PDC_CODE###\npdc_consent_form = model.dyn_invoke_for(:\"PDC Safe Consent Form Lookup\")\nif pdc_consent_form.present? && pdc_consent_form.consent_type.match?(/Grant consent/i)\n    model.dyn_invoke_for(:\"PDC Send Proposal to PDC\")\nend\n###END_PDC_CODE###\n"
+      "body": "###PDC_CODE###\npdc_consent_form = model.dyn_invoke_for(:\"PDC Safe Consent Form Lookup\").last\nif pdc_consent_form.present? && pdc_consent_form.consent_type.to_s.match?(/Grant consent/i)\n    model.dyn_invoke_for(:\"PDC Send Proposal to PDC\")\nend\n###END_PDC_CODE###\n"
     }
   ],
   "stencil_elements": [
