@@ -1,0 +1,178 @@
+<div class="pdc-auth-container" id="pdc-auth-container" role="region" aria-label="PDC Integration">
+    <!-- PDC:ELEMENT id=stencil-container-readonly -->
+    <!-- ============================================================
+       READ-ONLY PDC JOURNEY
+
+       A view-only twin of "4. pdc-stencil-container.html". It renders
+       the same 4-step journey but drops every JS-driven element:
+       no account-gate dropdown, no login/logout controls, no launch
+       button, no explorer panel/drag-ghost/status, and no
+       _pdcStructureReady signal. The ONLY interactive element is the
+       native "Review and Manage Consent" modal link (Fluxx to-modal),
+       so this block needs NO custom JavaScript at all.
+
+       Deploy this WITHOUT blocks 2/3/5 and oauth-callback.html. It
+       reuses the CSS in "1. portal-style.html" unchanged. See
+       docs/deployment.md.
+       ============================================================ -->
+
+    <!-- Consent state, resolved server-side via Liquid. Lives here with
+       the journey so the on-ramp owns the state it displays.
+
+       dyn_related returns a COLLECTION, not a record, and its empty
+       form is NOT reliably Liquid-falsy: piping an empty/nil relation
+       through `last` yields a value that tests truthy (only nil and
+       false are falsy in Liquid; "" is truthy). So the original bare
+       truthiness guard on the record always passed, emitting a link to
+       /machine_models//edit. The load-bearing guards are therefore
+       consentFormCount > 0 (checked BEFORE `last`, the same pattern as
+       Show Mapped Fields.html) and consentFormId != blank (`blank`
+       matches nil AND empty string).
+
+       Two INDEPENDENT booleans come out of this:
+         has_consent_form -> does a real record exist? Gates the CTA.
+                             Grants created before 07/01/2026 have no
+                             record at all (see "PDC After Save -
+                             Create Consent If Empty").
+         has_consent      -> did they affirmatively grant? Picks the
+                             complete branch.
+         has_declined     -> did they decline? Declining is a decision,
+                             not a missing step, so it gets its own
+                             acknowledged branch instead of "Action
+                             needed". Every branch with a record keeps
+                             the CTA, so they can change their mind.
+
+       Granted is tested as "non-blank AND not declined", NOT as a match
+       on "grant". This mirrors "PDC Send Proposal to PDC" and fails in
+       the safe direction: a reworded affirmative choice ("Yes, share my
+       data") still reads as granted, and submission re-checks anyway.
+       `contains "ecline"` drops the leading letter on purpose to match
+       either case -- it is the Liquid equivalent of that method's
+       /[Dd]ecline/ regex, not a typo. Only blank (not yet answered)
+       lands in the action branch.
+
+       KEEP EACH TAG ON A SINGLE LINE. Fluxx's save-time cleanup mangles
+       wrapped Liquid tags and blanks the whole block.
+
+       Keep this block and all consent branches IDENTICAL to the twin
+       stencil (4. pdc-stencil-container.html). They are synced by hand. -->
+    {% assign consentForms = 'MacModelTypeDynPdcConsent' | dyn_related: 'grant_or_request_id', model.id %} {% assign consentFormCount = consentForms.size %} {% assign has_consent_form = false %} {% assign has_consent = false %} {% assign has_declined = false %}
+    {% if consentFormCount > 0 %} {% assign consentForm = consentForms | last %} {% assign consentFormId = consentForm.id %} {% if consentFormId != blank %} {% assign has_consent_form = true %} {% endif %} {% endif %}
+    {% if has_consent_form and consentForm.consent_type != blank %} {% assign has_consent = true %} {% endif %}
+    {% if has_consent_form and consentForm.consent_type contains "ecline" %} {% assign has_consent = false %} {% assign has_declined = true %} {% endif %}
+
+    <!-- ============================================================
+       JOURNEY  (read-only)
+       Shows the whole path so a viewer sees where consent, login, and
+       the Data Explorer fit. Only consent has a real completion state
+       and a live action; steps 3 and 4 are inert "later" markers.
+       State is carried in text, not color alone (WCAG 1.4.1).
+       ============================================================ -->
+    <section class="pdc-journey">
+        <p class="pdc-phase-label">Contribute now</p>
+        <ol class="pdc-steps">
+            <li class="pdc-step pdc-step--available">
+                <span class="pdc-step-marker" aria-hidden="true">1</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title">Learn about the PDC</span>
+                    <span class="pdc-step-state">Start here</span>
+                    <a
+                        class="pdc-step-link"
+                        href="https://www.macfound.org/press/article/the-philanthropy-data-commons/"
+                        target="_blank"
+                        rel="noopener"
+                        >What is the PDC?</a
+                    >
+                </div>
+            </li>
+
+            {% if has_consent %}
+            <li class="pdc-step pdc-step--complete">
+                <span class="pdc-step-marker" aria-hidden="true">&#10003;</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title"
+                        >Consent to share your data</span
+                    >
+                    <span class="pdc-step-state pdc-state-complete">Done</span>
+                    <a
+                        class="to-modal pdc-step-cta"
+                        href="/machine_models/{{ consentForm.id }}/edit"
+                        data-on-success="refreshCaller,close"
+                        rel="noopener"
+                        >Review and Manage Consent</a
+                    >
+                </div>
+            </li>
+            {% elsif has_declined %}
+            <li class="pdc-step pdc-step--declined">
+                <span class="pdc-step-marker" aria-hidden="true">&#10003;</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title"
+                        >Consent to share your data</span
+                    >
+                    <span class="pdc-step-state pdc-state-declined">Declined</span>
+                    <span class="pdc-step-state">This grant's data will not be shared with the PDC.</span>
+                    <a
+                        class="to-modal pdc-step-cta"
+                        href="/machine_models/{{ consentForm.id }}/edit"
+                        data-on-success="refreshCaller,close"
+                        rel="noopener"
+                        >Review and Manage Consent</a
+                    >
+                </div>
+            </li>
+            {% else %}
+            <li class="pdc-step pdc-step--action" aria-current="step">
+                <span class="pdc-step-marker" aria-hidden="true">2</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title"
+                        >Consent to share your data</span
+                    >
+                    {% if has_consent_form %}
+                    <span class="pdc-step-state pdc-state-action"
+                        >Action needed</span
+                    >
+                    <a
+                        class="to-modal pdc-step-cta"
+                        href="/machine_models/{{ consentForm.id }}/edit"
+                        data-on-success="refreshCaller,close"
+                        rel="noopener"
+                        >Review and Manage Consent</a
+                    >
+                    {% else %}
+                    <span class="pdc-step-state"
+                        >Not available on this grant</span
+                    >
+                    {% endif %}
+                </div>
+            </li>
+            {% endif %}
+        </ol>
+
+        <p class="pdc-phase-label">Reuse later</p>
+        <ol class="pdc-steps" start="3">
+            <li class="pdc-step pdc-step--later" id="pdc-step-login">
+                <span class="pdc-step-marker" aria-hidden="true">3</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title">Log in to the PDC</span>
+                    <span class="pdc-step-state"
+                        >Available on your grant-request form once the PDC
+                        integration is enabled</span
+                    >
+                </div>
+            </li>
+
+            <li class="pdc-step pdc-step--later" id="pdc-step-explorer">
+                <span class="pdc-step-marker" aria-hidden="true">4</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title"
+                        >Use the Data Explorer to fill this application</span
+                    >
+                    <span class="pdc-step-state"
+                        >After you log in, if you have data to reuse</span
+                    >
+                </div>
+            </li>
+        </ol>
+    </section>
+</div>

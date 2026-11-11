@@ -1,0 +1,368 @@
+<div class="pdc-auth-container" id="pdc-auth-container" role="region" aria-label="PDC Integration">
+    <!-- PDC:ELEMENT id=stencil-container -->
+    <!-- ============================================================
+       1. DATA CARRIERS  (hidden, rendered server-side)
+       ============================================================ -->
+
+    <!-- Field mapping from the Ruby method, Base64-encoded JSON.
+       File 6 (behavior) decodes this once and caches it. Data only.
+       Kept in this always-visible component so it is resolvable even
+       when the session-controls group is hidden. -->
+    {% assign mapping_data = model.PDC_Get_PDC_Field_Mapping %}
+    <div
+        id="pdc-field-mappings"
+        class="hidden"
+        data-field-mappings="{{ mapping_data }}"
+        aria-hidden="true"
+    ></div>
+
+    <!-- Consent state, resolved server-side via Liquid. Lives here with
+       the journey so the on-ramp owns the state it displays.
+
+       dyn_related returns a COLLECTION, not a record, and its empty
+       form is NOT reliably Liquid-falsy: piping an empty/nil relation
+       through `last` yields a value that tests truthy (only nil and
+       false are falsy in Liquid; "" is truthy). So the original bare
+       truthiness guard on the record always passed, emitting a link to
+       /machine_models//edit. The load-bearing guards are therefore
+       consentFormCount > 0 (checked BEFORE `last`, the same pattern as
+       Show Mapped Fields.html) and consentFormId != blank (`blank`
+       matches nil AND empty string).
+
+       Two INDEPENDENT booleans come out of this:
+         has_consent_form -> does a real record exist? Gates the CTA.
+                             Grants created before 07/01/2026 have no
+                             record at all (see "PDC After Save -
+                             Create Consent If Empty").
+         has_consent      -> did they affirmatively grant? Picks the
+                             complete branch.
+         has_declined     -> did they decline? Declining is a decision,
+                             not a missing step, so it gets its own
+                             acknowledged branch instead of "Action
+                             needed". Every branch with a record keeps
+                             the CTA, so they can change their mind.
+
+       Granted is tested as "non-blank AND not declined", NOT as a match
+       on "grant". This mirrors "PDC Send Proposal to PDC" and fails in
+       the safe direction: a reworded affirmative choice ("Yes, share my
+       data") still reads as granted, and submission re-checks anyway.
+       `contains "ecline"` drops the leading letter on purpose to match
+       either case -- it is the Liquid equivalent of that method's
+       /[Dd]ecline/ regex, not a typo. Only blank (not yet answered)
+       lands in the action branch.
+
+       KEEP EACH TAG ON A SINGLE LINE. Fluxx's save-time cleanup mangles
+       wrapped Liquid tags and blanks the whole block.
+
+       Keep this block and all consent branches IDENTICAL to the twin
+       stencil (4r. pdc-stencil-readonly.html). They are synced by hand. -->
+    {% assign consentForms = 'MacModelTypeDynPdcConsent' | dyn_related: 'grant_or_request_id', model.id %} {% assign consentFormCount = consentForms.size %} {% assign has_consent_form = false %} {% assign has_consent = false %} {% assign has_declined = false %}
+    {% if consentFormCount > 0 %} {% assign consentForm = consentForms | last %} {% assign consentFormId = consentForm.id %} {% if consentFormId != blank %} {% assign has_consent_form = true %} {% endif %} {% endif %}
+    {% if has_consent_form and consentForm.consent_type != blank %} {% assign has_consent = true %} {% endif %}
+    {% if has_consent_form and consentForm.consent_type contains "ecline" %} {% assign has_consent = false %} {% assign has_declined = true %} {% endif %}
+
+    <!-- ============================================================
+       2. JOURNEY  (always visible, never grouped)
+       Shows the whole path so a newcomer sees where login and the
+       Data Explorer fit, without being pushed to log in early. Only
+       consent has a true completion state. Steps 3 and 4 are labeled
+       "later" on purpose: a new org gets nothing back from login yet.
+       State is carried in text, not color alone (WCAG 1.4.1).
+
+       This section is pure Liquid + HTML + the native to-modal link,
+       so it works even if the behavior file (6) fails to load.
+       ============================================================ -->
+    <section class="pdc-journey">
+        <p class="pdc-phase-label">Contribute now</p>
+        <ol class="pdc-steps">
+            <li class="pdc-step pdc-step--available">
+                <span class="pdc-step-marker" aria-hidden="true">1</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title">Learn about the PDC</span>
+                    <span class="pdc-step-state">Start here</span>
+                    <a
+                        class="pdc-step-link"
+                        href="https://www.macfound.org/press/article/the-philanthropy-data-commons"
+                        target="_blank"
+                        rel="noopener"
+                        >What is the PDC?</a
+                    >
+                </div>
+            </li>
+
+            {% if has_consent %}
+            <li class="pdc-step pdc-step--complete">
+                <span class="pdc-step-marker" aria-hidden="true">&#10003;</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title"
+                        >Consent to share your data</span
+                    >
+                    <span class="pdc-step-state pdc-state-complete">Done</span>
+                    <a
+                        class="to-modal pdc-step-cta"
+                        href="/machine_models/{{ consentForm.id }}/edit"
+                        data-on-success="refreshCaller,close"
+                        rel="noopener"
+                        >Review and Manage Consent</a
+                    >
+                </div>
+            </li>
+            {% elsif has_declined %}
+            <li class="pdc-step pdc-step--declined">
+                <span class="pdc-step-marker" aria-hidden="true">&#10003;</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title"
+                        >Consent to share your data</span
+                    >
+                    <span class="pdc-step-state pdc-state-declined">Declined</span>
+                    <span class="pdc-step-state">This grant's data will not be shared with the PDC.</span>
+                    <a
+                        class="to-modal pdc-step-cta"
+                        href="/machine_models/{{ consentForm.id }}/edit"
+                        data-on-success="refreshCaller,close"
+                        rel="noopener"
+                        >Review and Manage Consent</a
+                    >
+                </div>
+            </li>
+            {% else %}
+            <li class="pdc-step pdc-step--action" aria-current="step">
+                <span class="pdc-step-marker" aria-hidden="true">2</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title"
+                        >Consent to share your data</span
+                    >
+                    {% if has_consent_form %}
+                    <span class="pdc-step-state pdc-state-action"
+                        >Action needed</span
+                    >
+                    <a
+                        class="to-modal pdc-step-cta"
+                        href="/machine_models/{{ consentForm.id }}/edit"
+                        data-on-success="refreshCaller,close"
+                        rel="noopener"
+                        >Review and Manage Consent</a
+                    >
+                    {% else %}
+                    <span class="pdc-step-state"
+                        >Not available on this grant</span
+                    >
+                    {% endif %}
+                </div>
+            </li>
+            {% endif %}
+        </ol>
+
+        <p class="pdc-phase-label">Reuse later</p>
+        <ol class="pdc-steps" start="3">
+            <li class="pdc-step pdc-step--later" id="pdc-step-login">
+                <span class="pdc-step-marker" aria-hidden="true">3</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title">Log in to the PDC</span>
+                    <span class="pdc-step-state"
+                        >Confirm below whether your organization already has a
+                        PDC account</span
+                    >
+
+                    <!-- ── Account-exists proxy ─────────────────────────────
+               This PROXY <select> is the question the grantee answers, shown
+               above the login button. It is our own stencil markup so a Fluxx
+               partial "refreshCaller" refresh (e.g. saving the consent modal)
+               re-renders it INTACT with the journey. The behavior file (6)
+               seeds it from, and writes changes back to, the NATIVE
+               grant_request[pdc_account_exists] field, which stays hidden in
+               its own Fluxx slot (file 1) so Fluxx still owns + saves it and
+               it survives the refresh. We do NOT move the native field —
+               moving it puts its only copy in the volatile journey slot,
+               which the refresh destroys.
+
+               IMPORTANT: keep each tag on a SINGLE line. Multi-line tag
+               wrapping is mangled by Fluxx's save-time cleanup and blanks the
+               whole block (the render-killing regression). Options must mirror
+               the native field: blank / Yes=1 / No=0. -->
+                    <div class="pdc-account-gate" id="pdc-account-gate-slot" data-original-id="pdc-account-gate-slot">
+                        <label class="pdc-account-gate-label" for="pdc-account-proxy" data-original-id="pdc-account-proxy-label">Do you already have an organizational account setup with the PDC?</label>
+                        <select id="pdc-account-proxy" class="pdc-account-gate-select" data-original-id="pdc-account-proxy">
+                            <option value="">Select an answer&hellip;</option>
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+
+                    <!-- ── Session controls ─────────────────────────────────
+               Login / connected / launch / logout. Hidden until the proxy
+               dropdown above is "Yes". The behavior file (last-loaded) toggles
+               .hidden on this wrapper via syncSessionControls(), and toggles
+               login vs authenticated WITHIN it via updateAuthUI(). Elements
+               are resolved by data-original-id, so keep the ids intact. -->
+                    <div
+                        class="pdc-session-controls hidden"
+                        id="pdc-session-controls"
+                    >
+                        <!-- Login (shown when user not authenticated) -->
+                        <div
+                            id="pdc-login-container"
+                            role="group"
+                            aria-label="PDC authentication"
+                        >
+                            <button
+                                id="pdc-login-btn"
+                                class="pdc-button"
+                                type="button"
+                                aria-describedby="pdc-login-desc"
+                            >
+                                Log in to PDC
+                            </button>
+                            <span id="pdc-login-desc" class="sr-only">
+                                Opens a popup window to authenticate with the
+                                Philanthropy Data Commons
+                            </span>
+                        </div>
+
+                        <!-- Authenticated (shown when user logged in) -->
+                        <div
+                            id="pdc-authenticated-container"
+                            class="hidden"
+                            role="group"
+                            aria-label="PDC session"
+                        >
+                            <div
+                                class="pdc-user-info"
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
+                            >
+                                <div>
+                                    Connected as:
+                                    <strong id="pdc-user-name"></strong>
+                                </div>
+                                <div id="pdc-user-email"></div>
+                            </div>
+                            <br />
+                            <button
+                                id="pdc-logout-btn"
+                                class="pdc-button"
+                                type="button"
+                            >
+                                Log out from PDC
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </li>
+
+            <li class="pdc-step pdc-step--later" id="pdc-step-explorer">
+                <span class="pdc-step-marker" aria-hidden="true">4</span>
+                <div class="pdc-step-body">
+                    <span class="pdc-step-title"
+                        >Use the Data Explorer to fill this application</span
+                    >
+                    <span class="pdc-step-state"
+                        >After you log in, if you have data to reuse</span
+                    >
+
+                    <!-- ── Launch control (Step 4) ──────────────────────────
+               The "Launch PDC Data Explorer" button. Lives OUTSIDE
+               #pdc-session-controls (which is account-gated under step 3),
+               so it is driven purely by auth state: updateAuthUI() in the
+               behavior file toggles .hidden on this wrapper. Shown only
+               when the grantee is logged in; step-4 text always shows.
+               Resolved by data-original-id, so keep the ids intact. -->
+                    <div id="pdc-launch-container" class="hidden" data-original-id="pdc-launch-container" role="group" aria-label="PDC Data Explorer">
+                        <button id="pdc-launch-btn" class="pdc-button" type="button" aria-describedby="pdc-launch-desc">Launch PDC Data Explorer</button>
+                        <span id="pdc-launch-desc" class="sr-only">Fetches your data from PDC and opens the explorer panel</span>
+                    </div>
+                </div>
+            </li>
+        </ol>
+    </section>
+
+    <!-- ============================================================
+       SESSION CONTROLS: login + connected + logout live inside journey
+       step 3 (#pdc-session-controls, account-gated). The Launch button
+       lives inside step 4 (#pdc-launch-container, auth-gated only).
+       Visibility is JS-driven (see behavior file: syncSessionControls +
+       updateAuthUI) off the native grant_request[pdc_account_exists]
+       dropdown and the OAuth auth state, not a Fluxx group, because a
+       group cannot inject into the journey list.
+       ============================================================ -->
+
+    <!-- ============================================================
+       3. EXPLORER INFRASTRUCTURE  (always present, hidden until used)
+       The panel, drag ghost, and status region are not session
+       controls and must always exist for the behavior file to work,
+       so they stay in this always-visible component. The panel is
+       position:fixed and gets reparented to body on open, so its
+       location in the markup does not matter functionally.
+       ============================================================ -->
+    <div
+        class="pdc-floating-panel hidden"
+        id="pdcProposalsPanel"
+        tabindex="-1"
+        role="dialog"
+        aria-labelledby="pdcPanelTitle"
+        aria-modal="false"
+        aria-describedby="pdcPanelDesc"
+    >
+        <div class="pdc-panel-header" id="pdcPanelHeader">
+            <h2 id="pdcPanelTitle">PDC Data Explorer</h2>
+            <span id="pdcPanelDesc" class="sr-only">
+                Drag field values from proposals onto the form to populate
+                fields
+            </span>
+            <div class="pdc-panel-controls">
+                <button
+                    id="closeBtn"
+                    type="button"
+                    title="Close"
+                    aria-label="Close panel"
+                >
+                    &times;
+                </button>
+            </div>
+        </div>
+
+        <div class="pdc-panel-search">
+            <label for="searchInput" class="sr-only">Search PDC Data</label>
+            <input
+                type="search"
+                id="searchInput"
+                aria-label="Search proposals by opportunity or funder name"
+                placeholder="Search by opportunity or funder..."
+                autocomplete="off"
+            />
+        </div>
+
+        <div
+            class="pdc-panel-body"
+            id="panelBody"
+            role="list"
+            aria-label="Proposal entries"
+            aria-live="polite"
+        ></div>
+    </div>
+
+    <!-- Drag ghost (positioned offscreen, moved by drag handler) -->
+    <div class="pdc-drag-ghost" id="dragGhost" aria-hidden="true"></div>
+
+    <!-- Live region for status announcements (loading, errors) -->
+    <div
+        id="pdc-status"
+        class="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+    ></div>
+
+    <!-- Structure-ready signal. KEEP THIS in this always-visible
+       component, not in the grouped session-controls file. The
+       behavior file (6) refuses to init until _pdcStructureReady is
+       true; if this lived inside a hidden group and Fluxx lazy-renders
+       hidden groups, behavior would never initialize for the default
+       (No) state. MUST stay last so all markup above exists first.
+
+       Kept on a SINGLE LINE on purpose: Fluxx's deploy tool mangles a
+       multi-line <img> (drops the block / emits literal "undefined"),
+       so this tag must not be wrapped. -->
+    <img style="display: none" src="/images/fluxx_engine/theme/default/icons/sitemap.png" onload="window._pdcStructureReady = true;" alt="" />
+</div>

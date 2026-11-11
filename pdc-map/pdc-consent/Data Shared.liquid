@@ -1,0 +1,61 @@
+{% assign pdc_preview = model.PDC_Data_Preview %}
+
+<div class="pdc-data-preview">
+
+  <table class="pdc-fields-table">
+    <thead>
+      <tr>
+        <th>Field Name</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if pdc_preview.error %}<tr class="no-value"><td colspan="2"><em>{{ pdc_preview.error | escape }}</em></td></tr>{% endif %}
+      {% for field in pdc_preview.display_fields %}
+      <tr class="{% unless field.has_value %}no-value{% endunless %}">
+        <td>{{ field.field_name }}</td>
+        <td>
+          {% if field.has_value %}
+            {{ field.value }}
+          {% else %}
+            <em>No data</em>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <style>
+    .pdc-data-preview {
+      margin: 20px 0;
+    }
+    .pdc-fields-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    .pdc-fields-table th {
+      background-color: #f0f0f0;
+      padding: 10px;
+      text-align: left;
+      border-bottom: 2px solid #ddd;
+    }
+    .pdc-fields-table td {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .pdc-fields-table tbody tr:nth-child(even) {
+      background-color: #f8f8f8;
+    }
+    .pdc-fields-table tr.no-value td {
+      color: #999;
+    }
+    .summary {
+      background-color: #f9f9f9;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+  </style>
+</div>

@@ -1,0 +1,35 @@
+<!-- PDC deploy model results (Validate / Install / Uninstall / Restore). Written by PDC Bootstrap Deploy Model from layout.json: edit it in the repo, keep every tag on one line, never use the rich text editor. -->
+<style>
+.pdc-results { font-family: inherit; font-size: 13px; }
+.pdc-results details.pdc-run { border: 1px solid #d6d6d6; border-radius: 4px; margin: 0 0 10px; padding: 6px 10px; }
+.pdc-results summary { cursor: pointer; }
+.pdc-results .pdc-meta { color: #666; margin-left: 6px; }
+.pdc-results .pdc-badge { display: inline-block; border-radius: 10px; padding: 1px 8px; margin: 2px 4px 2px 0; font-size: 12px; }
+.pdc-results .pdc-good { background: #e3f4e5; color: #1e6b2a; }
+.pdc-results .pdc-done { background: #e3ecfa; color: #1f4e9a; }
+.pdc-results .pdc-info { background: #f1f1f1; color: #444; }
+.pdc-results .pdc-bad { background: #fbe4e2; color: #9b2218; }
+.pdc-results h4 { margin: 10px 0 4px; font-size: 13px; }
+.pdc-results ul { margin: 0 0 6px 18px; padding: 0; }
+.pdc-results code { font-size: 12px; }
+.pdc-results .pdc-detail { color: #555; }
+.pdc-results .pdc-error { color: #9b2218; font-weight: bold; }
+.pdc-results .pdc-snapshots { color: #444; margin: 0 0 10px; }
+</style>
+{% assign pdc = model.PDC_Results %}
+<div class="pdc-results">
+{% if pdc.snapshots.previous %}<p class="pdc-snapshots"><strong>Restore Previous</strong> goes back to the configuration saved {{ pdc.snapshots.previous.label | escape }} ({{ pdc.snapshots.previous.taken_at | escape }}: {{ pdc.snapshots.previous.components }} components, {{ pdc.snapshots.previous.stencils }} forms). Every snapshot is kept under Documents, e.g. <em>{{ pdc.snapshots.previous.document_name | escape }}</em>.</p>{% endif %}
+{% for section in pdc.sections %}
+<details class="pdc-run"{% if forloop.first %} open{% endif %}>
+<summary><strong>{{ section.title | escape }}</strong><span class="pdc-meta">{{ section.mode | escape }} &middot; {{ section.ran_at | escape }}</span><br>{% for s in section.summary %}<span class="pdc-badge pdc-{{ s.tone }}">{{ s.label | escape }}: {{ s.count }}</span>{% endfor %}</summary>
+{% if section.error %}<p class="pdc-error">{{ section.error | escape }}</p>{% endif %}
+{% for w in section.warnings %}<p class="pdc-detail">Warning: {{ w | escape }}</p>{% endfor %}
+{% for g in section.groups %}
+<h4><span class="pdc-badge pdc-{{ g.tone }}">{{ g.label | escape }}</span> {{ g.items.size }}</h4>
+<ul>{% for i in g.items %}<li><code>{{ i.key | escape }}</code>{% if i.detail != blank %} <span class="pdc-detail">&mdash; {{ i.detail | escape }}</span>{% endif %}</li>{% endfor %}</ul>
+{% endfor %}
+</details>
+{% else %}
+<p>No results yet. Click <strong>Validate</strong> to see what <strong>Install</strong> would change.</p>
+{% endfor %}
+</div>

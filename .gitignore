@@ -1,0 +1,5 @@
+.DS_Store
+*.textClipping
+DEV/
+__pycache__/
+*.pyc

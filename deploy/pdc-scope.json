@@ -1,0 +1,82 @@
+{
+  "_comment": "Hand-maintained. Says WHAT the PDC integration consists of. The installer's Discover/Export methods fetch this file from the repo; deploy/tools/pdc_manifest.rb reads it locally. deploy/pdc-manifest.json is generated from an export and must not be hand-edited.",
+
+  "owned_model_types": {
+    "MacModelTypeDynPdcApplicationForm1": { "label": "PDC Integration Map", "folder": "pdc-map/pdc-integration-map" },
+    "MacModelTypeDynPdcMappedField1":     { "label": "PDC Mapped Field",    "folder": "pdc-map/pdc-mapped-field" },
+    "MacModelTypeDynPdcConsent":          { "label": "PDC Consent",         "folder": "pdc-map/pdc-consent" }
+  },
+
+  "grant_request": {
+    "model_type": "GrantRequest",
+    "folder": "pdc-map/grant-request",
+    "method_prefixes": ["PDC ", "PDC_"],
+    "attributes": ["pdc_account_exists", "pdc_proposal_id"],
+    "shared_state_hooks": [
+      { "state": "granted", "field": "unsafe_after_enter", "path": "pdc-map/grant-request/PDC After Enter - Send to PDC.rb" }
+    ]
+  },
+
+  "markers": {
+    "code_start": "###PDC_CODE###",
+    "code_end": "###END_PDC_CODE###",
+    "_element_regex": "The marker sits inside each element's first tag's content, in whatever comment the content allows (<!-- --> in a div, // in a script, /* */ in a style), never as a top-level comment: Fluxx can rebuild an element from its top-level nodes and turns a comment or a bare line break there into the word \"undefined\". Older top-level <!-- --> markers still match.",
+    "element_regex": "PDC:ELEMENT\\s+id=([\\w-]+)"
+  },
+
+  "secret_methods": ["Get PDC Client ID", "Get PDC Client Secret"],
+
+  "excluded_method_patterns": ["^zzz", "^test_method$", "^Testing$"],
+
+  "runtime_option_attributes": [
+    "MacModelTypeDynPdcApplicationForm1.opportunity",
+    "MacModelTypeDynPdcApplicationForm1.application",
+    "MacModelTypeDynPdcApplicationForm1.grant_request_themes",
+    "MacModelTypeDynPdcMappedField1.fluxx_field",
+    "MacModelTypeDynPdcMappedField1.pdc_field"
+  ],
+
+  "stencil_volatile_keys": ["uid"],
+  "_stencil_profile_keys": "Stencil settings holding UserProfile ids. Masked when hashing (ids differ per instance); checked against the deploy model's pdc_staff_profile instead.",
+  "stencil_profile_keys": ["user_profile"],
+
+  "_required_stencil_fields": "Native fields the PDC code reads from the form. Every stencil that holds `with_element` must also have this field (an attribute element) somewhere on it, usually hidden. The account question's proxy dropdown reads and writes grant_request[pdc_account_exists].",
+  "required_stencil_fields": [
+    { "model_type": "GrantRequest", "attribute": "pdc_account_exists", "with_element": "stencil-container" }
+  ],
+
+  "_element_required_config": "Settings every PDC stencil element needs. allow_script lets its JavaScript (and onload handlers) run; strip_html would remove its markup. Fluxx stores these as true/\"1\"/\"0\"; any on/off form is accepted.",
+  "element_required_config": { "allow_script": true, "strip_html": false },
+
+  "_stencil_option_ids": "Dropdown option ids that the repo's model forms use in show/hide conditions, as they are on TRN (where the forms were exported). Install swaps them for the same options' ids on the target instance, and both sides of Validate compare these conditions by option name instead of id.",
+  "stencil_option_ids": {
+    "MacModelTypeDynPdcConsent.consent_type": { "10699983": "Grant consent to share data with the PDC", "10699984": "Decline to share data with the PDC" }
+  },
+
+  "_stencil_field_templates": "How Install adds a native field the PDC code reads, copied from TRN's stencil 45712 (2026-10-19). visible_form only: the field is on the form for the PDC component's account question to read and write, and not shown in the read-only view.",
+  "stencil_field_templates": {
+    "GrantRequest.pdc_account_exists": {"element_type": "attribute", "name": "pdc_account_exists", "config": {"label": "Do you already have an organizational account setup with the PDC?", "required": "0", "widget_type": "Dropdown", "boolean_true_label": "Yes", "boolean_false_label": "No", "boolean_default": "False"}, "visibility": {"visible_form": true, "advanced_filter": "1", "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"GrantRequest\"}", "advanced_sort": "[]"}, "styling": {"alignment": "left"}, "label": "Do you already have an organizational account setup with the PDC?"}
+  },
+
+  "_placement": "Where Install adds PDC elements that aren't on a form yet, in this order, at the bottom of the form (inside a group with group_label, except on bare_model_types): interactive (the edit and the read-only component) to the forms of each theme chosen in Grant Request Themes, dashboard to the first GenericTemplate on the PDC Grantee Profile's dashboard. Admins move them afterwards.",
+  "placement": {
+    "group_label": "Contribute to the Philanthropy Data Commons (PDC)",
+    "interactive": ["portal-style", "fluxx-card-api", "oauth-client", "stencil-container", "stencil-container-readonly", "floating-panel"],
+    "dashboard": ["oauth-callback"],
+    "_bare_model_types": "Forms of these model types get PDC elements without the PDC group: the grantee dashboard page's OAuth callback only runs script, and a group would show grantees an empty container. Install adds them bare and takes them out of a PDC group already there.",
+    "bare_model_types": ["GenericTemplate"]
+  },
+
+  "_stencil_element_visibility": "An element's optional visibility says which views it must be in (true) or out of (false): visible_form is the edit view, visible_show the detail view. The interactive component is edit-only and the read-only one detail-only, so a grantee sees exactly one of them. Install sets these on every copy of the element; Validate reports a copy that differs as CONFIG_DIFFERS.",
+  "stencil_elements": [
+    { "id": "portal-style",               "path": "data-explorer/1. portal-style.html",          "host_model_types": ["GrantRequest"],    "include": ["<style", "pdc-floating-panel"],                                   "exclude": [] },
+    { "id": "fluxx-card-api",             "path": "data-explorer/2. fluxxCardAPI.html",          "host_model_types": ["GrantRequest"],    "include": ["ACTIVE_CARD_SELECTOR"],                                          "exclude": [] },
+    { "id": "oauth-client",               "path": "data-explorer/3. oauth.html",                 "host_model_types": ["GrantRequest"],    "include": ["codeVerifier"],                                                  "exclude": [] },
+    { "id": "stencil-container",          "path": "data-explorer/4. pdc-stencil-container.html", "host_model_types": ["GrantRequest"],    "include": ["pdc-auth-container", "pdc-launch-btn", "Review and Manage Consent"], "exclude": [],
+      "visibility": { "visible_form": true, "visible_show": false } },
+    { "id": "stencil-container-readonly", "path": "data-explorer/4r. pdc-stencil-readonly.html", "host_model_types": ["GrantRequest"],   "include": ["pdc-auth-container", "Review and Manage Consent"],               "exclude": ["pdc-launch-btn"],
+      "visibility": { "visible_form": false, "visible_show": true } },
+    { "id": "floating-panel",             "path": "data-explorer/5. floating-panel.html",        "host_model_types": ["GrantRequest"],    "include": ["_pdcInitBehavior"],                                              "exclude": [] },
+    { "id": "oauth-callback",             "path": "data-explorer/oauth-callback.html",           "host_model_types": ["GenericTemplate"], "include": ["pdc_oauth_result", "window.close"],                               "exclude": ["codeVerifier"] }
+  ]
+}

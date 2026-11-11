@@ -1,0 +1,1 @@
+model.reverse_pdc_mapping_field_MacModelTypeDynPdcMappedField1.destroy_all

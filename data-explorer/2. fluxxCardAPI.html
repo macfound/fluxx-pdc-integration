@@ -1,0 +1,952 @@
+<script>
+    // PDC:ELEMENT id=fluxx-card-api
+    /* Fluxx Card API */
+
+    // ============================================================
+    // Configuration
+    // ============================================================
+
+    var CONFIG = {
+        ACTIVE_CARD_SELECTOR:
+            "li.card.detail-open.listing-card:not(.detail-only)",
+        FORM_BODY_SELECTOR: ".detail.area .body",
+        COLLAPSIBLE_SELECTOR: ".collapsible",
+        LAZY_LOAD_SELECTOR: ".lazy-load",
+        EXPAND_TIMEOUT_MS: 10000,
+        POLL_INTERVAL_MS: 100,
+        // Selectors for fields we want to capture
+        FIELD_SELECTORS: [
+            "input[type='text']:not([disabled]):not([readonly]):not([type='hidden'])",
+            "input[type='search']:not([disabled]):not([readonly])",
+            "input.currency:not([disabled]):not([readonly])",
+            "select:not([disabled]):not([readonly])",
+            "textarea:not([disabled]):not([readonly])",
+        ],
+    };
+
+    window.isInGranteePortal =
+        document.querySelector('[class*="ps-container"]') != null;
+
+    // Track sections already expanded to avoid redundant work
+    var expandedSections = new WeakSet();
+
+    // ============================================================
+    // Field Array (populated by scan operations)
+    // ============================================================
+
+    var fluxxFields = [];
+
+    // ============================================================
+    // Internal Helpers
+    // ============================================================
+
+    /**
+     * Returns the active card element, or null if none found.
+     */
+    function getActiveCard() {
+        var candidates = document.querySelectorAll(
+            "li.card.detail-open.listing-card:not(.detail-only)",
+        );
+        for (var i = 0; i < candidates.length; i++) {
+            if (window.getComputedStyle(candidates[i]).display !== "none") {
+                return candidates[i];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the form body within the active card, or null.
+     */
+    function getFormBody(card) {
+        if (!card) return null;
+        return card.querySelector(CONFIG.FORM_BODY_SELECTOR);
+    }
+
+    /**
+     * Determines if an input is an autocomplete hidden value field.
+     * These typically have a visible text input paired with a hidden input
+     * that stores the actual ID/value. Common pattern: hidden input with
+     * name ending in \'_id\' adjacent to a text input with autocomplete behavior.
+     */
+    function isAutocompleteHiddenField(el) {
+        if (el.type === "hidden") return true;
+
+        // Check for common autocomplete patterns
+        var name = el.getAttribute("name") || "";
+
+        // Hidden inputs paired with autocomplete text fields often have:
+        // - A sibling input with class 'autocomplete' or 'ui-autocomplete-input'
+        // - Name pattern suggesting it stores an ID for another visible field
+        if (el.type === "text") {
+            var parent = el.parentElement;
+            if (parent) {
+                var hasAutocompleteClass =
+                    el.classList.contains("autocomplete") ||
+                    el.classList.contains("ui-autocomplete-input");
+                // The visible autocomplete input is fine; we exclude the hidden value holder
+                if (hasAutocompleteClass) return false;
+
+                // Check if this is a hidden value field (often has specific naming)
+                var siblingHidden = parent.querySelector(
+                    "input[type='hidden']",
+                );
+                if (
+                    siblingHidden &&
+                    name &&
+                    siblingHidden.getAttribute("name") === name
+                ) {
+                    // This text input shares a name with a hidden input; likely a display-only field
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determines field type based on element characteristics.
+     */
+    function detectFieldType(el) {
+        var tagName = el.tagName.toLowerCase();
+
+        if (tagName === "select") {
+            return "select";
+        }
+
+        if (tagName === "textarea") {
+            if (el.classList.contains("wysiwyg")) {
+                return "wysiwyg";
+            }
+            return "textarea";
+        }
+
+        if (tagName === "input") {
+            // Currency fields
+            if (el.classList.contains("currency")) {
+                return "currency";
+            }
+
+            // Date fields: check for datepicker classes or date-related attributes
+            if (
+                el.classList.contains("datepicker") ||
+                el.classList.contains("hasDatepicker") ||
+                el.classList.contains("date-picker") ||
+                el.getAttribute("data-datepicker") !== null ||
+                el.getAttribute("data-date-format") !== null ||
+                (el.getAttribute("name") || "").indexOf("date") !== -1 ||
+                (el.getAttribute("id") || "").indexOf("date") !== -1
+            ) {
+                return "date";
+            }
+
+            return "text";
+        }
+
+        return "text";
+    }
+
+    /**
+     * Extracts the label for a field element.
+     * Tries multiple strategies since Fluxx uses inconsistent markup.
+     */
+    function extractLabel(el) {
+        var label = null;
+        var id = el.getAttribute("id");
+        var name = el.getAttribute("name");
+
+        // Strategy 1: Label with matching 'for' attribute
+        if (id) {
+            var labelEl = document.querySelector("label[for='" + id + "']");
+            if (labelEl) {
+                label = labelEl.textContent;
+            }
+        }
+
+        // Strategy 2: Label as previous sibling
+        if (!label) {
+            var prev = el.previousElementSibling;
+            while (prev) {
+                if (prev.tagName.toLowerCase() === "label") {
+                    label = prev.textContent;
+                    break;
+                }
+                // Sometimes there's a wrapper between label and input
+                if (
+                    prev.classList.contains("label") ||
+                    prev.querySelector("label")
+                ) {
+                    var innerLabel = prev.classList.contains("label")
+                        ? prev
+                        : prev.querySelector("label");
+                    label = innerLabel.textContent;
+                    break;
+                }
+                prev = prev.previousElementSibling;
+            }
+        }
+
+        // Strategy 3: Label as parent or within parent
+        if (!label) {
+            var parent = el.parentElement;
+            var depth = 0;
+            while (parent && depth < 4) {
+                // Check for label element within the container
+                var containerLabel = parent.querySelector("label");
+                if (containerLabel && containerLabel !== el) {
+                    label = containerLabel.textContent;
+                    break;
+                }
+
+                // Check for .label class element
+                var labelClassEl = parent.querySelector(".label");
+                if (labelClassEl) {
+                    label = labelClassEl.textContent;
+                    break;
+                }
+
+                // Check if parent itself is a label
+                if (parent.tagName.toLowerCase() === "label") {
+                    label = parent.textContent;
+                    // Remove the input's own value from label text
+                    var inputValue = el.value || "";
+                    if (inputValue && label.indexOf(inputValue) !== -1) {
+                        label = label.replace(inputValue, "");
+                    }
+                    break;
+                }
+
+                // Check for li.form-element or similar container patterns
+                if (
+                    parent.classList.contains("form-element") ||
+                    parent.tagName.toLowerCase() === "li"
+                ) {
+                    var formLabel = parent.querySelector(".label, label");
+                    if (formLabel) {
+                        label = formLabel.textContent;
+                        break;
+                    }
+                }
+
+                parent = parent.parentElement;
+                depth++;
+            }
+        }
+
+        // Strategy 4: H3 within collapsible header (for section-level labels)
+        if (!label) {
+            var collapsible = el.closest(".collapsible");
+            if (collapsible) {
+                var header = collapsible.querySelector("h3");
+                if (header) {
+                    label = header.textContent;
+                }
+            }
+        }
+
+        // Strategy 5: Derive from name attribute as fallback
+        if (!label && name) {
+            // Convert \'grant_request[field_name]\' to \'Field Name\'
+            var match = name.match(/\[([^\]]+)\]/);
+            if (match) {
+                label = match[1]
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, function (c) {
+                        return c.toUpperCase();
+                    });
+            }
+        }
+
+        // Clean up the label
+        if (label) {
+            label = label
+                .replace(/:/g, "") // Remove colons
+                .replace(/\s+/g, " ") // Normalize whitespace
+                .replace(/^\s+|\s+$/g, ""); // Trim
+        }
+
+        return label || "";
+    }
+
+    /**
+     * Extracts options from a select element.
+     */
+    function extractSelectOptions(selectEl) {
+        var options = [];
+        var optionEls = selectEl.querySelectorAll("option");
+
+        for (var i = 0; i < optionEls.length; i++) {
+            var opt = optionEls[i];
+            options.push({
+                value: opt.value,
+                text: opt.textContent.replace(/^\s+|\s+$/g, ""),
+            });
+        }
+
+        return options;
+    }
+
+    /**
+     * Gets the TinyMCE editor instance for a textarea, if it exists.
+     */
+    function getTinyMCEInstance(textareaEl) {
+        if (typeof tinymce === "undefined") return null;
+
+        var id = textareaEl.getAttribute("id");
+        if (!id) return null;
+
+        return tinymce.get(id) || null;
+    }
+
+    /**
+     * Gets the current value of a field element.
+     */
+    function getFieldValue(el, type, editorInstance) {
+        if (type === "wysiwyg" && editorInstance) {
+            return editorInstance.getContent();
+        }
+
+        if (type === "select") {
+            return el.value;
+        }
+
+        return el.value || "";
+    }
+
+    /**
+     * Builds a field object from a DOM element.
+     */
+    function buildFieldObject(el) {
+        var type = detectFieldType(el);
+        var editorInstance = null;
+
+        if (type === "wysiwyg") {
+            editorInstance = getTinyMCEInstance(el);
+        }
+
+        var field = {
+            name: el.getAttribute("name") || "",
+            label: extractLabel(el),
+            type: type,
+            element: el,
+            value: getFieldValue(el, type, editorInstance),
+        };
+
+        if (type === "select") {
+            field.options = extractSelectOptions(el);
+        }
+
+        if (type === "wysiwyg") {
+            field.editorInstance = editorInstance;
+        }
+
+        return field;
+    }
+
+    /**
+     * Scans the form body for all relevant field elements.
+     */
+    function scanFields(formBody) {
+        if (!formBody) return [];
+
+        var fields = [];
+        var selector = CONFIG.FIELD_SELECTORS.join(", ");
+        var elements = formBody.querySelectorAll(selector);
+
+        for (var i = 0; i < elements.length; i++) {
+            var el = elements[i];
+
+            // Skip hidden inputs
+            if (el.type === "hidden") continue;
+
+            // Skip autocomplete hidden value fields
+            if (isAutocompleteHiddenField(el)) continue;
+
+            // Skip if not visible (display:none, visibility:hidden, or zero dimensions)
+            // Note: We still include fields in collapsed sections; visibility check is for
+            // truly hidden elements, not collapsed containers
+            var style = window.getComputedStyle(el);
+            if (style.display === "none" || style.visibility === "hidden") {
+                // Check if it's inside a collapsed section (which is fine)
+                var inCollapsed = el.closest(
+                    ".collapsible.collapsed, .collapsible:not(.expanded)",
+                );
+                if (!inCollapsed) continue;
+            }
+
+            fields.push(buildFieldObject(el));
+        }
+
+        return fields;
+    }
+
+    // ============================================================
+    // Utility Methods
+    // ============================================================
+
+    var fluxxFieldUtils = {
+        /**
+         * Gets the current value of a field.
+         * For wysiwyg fields, retrieves content from TinyMCE.
+         */
+        getValue: function (field) {
+            if (!field || !field.element) return null;
+
+            if (field.type === "wysiwyg" && field.editorInstance) {
+                return field.editorInstance.getContent();
+            }
+
+            return field.element.value;
+        },
+
+        /**
+         * Sets the value of a field.
+         * For wysiwyg fields, uses TinyMCE API to update the editor.
+         * For other fields, sets the value property and dispatches change event.
+         */
+        setValue: function (field, value) {
+            if (!field || !field.element) return false;
+
+            if (field.type === "wysiwyg") {
+                if (field.editorInstance) {
+                    field.editorInstance.setContent(value);
+                    // Also update the underlying textarea for form submission
+                    field.element.value = value;
+                    return true;
+                }
+                // Fallback if editor not initialized yet
+                field.element.value = value;
+                return true;
+            }
+
+            // For standard inputs, selects, textareas
+            field.element.value = value;
+
+            // Dispatch events to trigger any listeners (validation, conditional logic, etc.)
+            var changeEvent = new Event("change", { bubbles: true });
+            var inputEvent = new Event("input", { bubbles: true });
+            field.element.dispatchEvent(inputEvent);
+            field.element.dispatchEvent(changeEvent);
+
+            // Update cached value
+            field.value = value;
+
+            return true;
+        },
+
+        /**
+         * Checks if a field is currently visible in the viewport.
+         * Returns false if the field or its container is hidden/collapsed.
+         */
+        isVisible: function (field) {
+            if (!field || !field.element) return false;
+
+            var el = field.element;
+
+            // Check basic visibility
+            if (el.offsetParent === null) {
+                // offsetParent is null for hidden elements (except body, fixed position)
+                var style = window.getComputedStyle(el);
+                if (style.display === "none" || style.visibility === "hidden") {
+                    return false;
+                }
+            }
+
+            // Check if inside a collapsed section
+            var collapsible = el.closest(".collapsible");
+            if (collapsible) {
+                // Different Fluxx versions use different collapsed indicators
+                if (collapsible.classList.contains("collapsed")) return false;
+
+                // Check for content area visibility
+                var content = collapsible.querySelector(
+                    ".collapsible-content, .content, .body",
+                );
+                if (content) {
+                    var contentStyle = window.getComputedStyle(content);
+                    if (
+                        contentStyle.display === "none" ||
+                        contentStyle.height === "0px"
+                    ) {
+                        return false;
+                    }
+                }
+            }
+
+            // Check if element is in viewport
+            var rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        },
+
+        /**
+         * Focuses the field element.
+         * For wysiwyg fields, focuses the TinyMCE editor.
+         */
+        focus: function (field) {
+            if (!field || !field.element) return false;
+
+            if (field.type === "wysiwyg" && field.editorInstance) {
+                field.editorInstance.focus();
+                return true;
+            }
+
+            // Scroll into view if needed
+            field.element.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+
+            // Small delay to allow scroll to complete
+            setTimeout(function () {
+                field.element.focus();
+            }, 100);
+
+            return true;
+        },
+
+        /**
+         * Finds a field by name pattern (exact match or partial).
+         */
+        findByName: function (namePattern, exact) {
+            for (var i = 0; i < fluxxFields.length; i++) {
+                var field = fluxxFields[i];
+                if (exact) {
+                    if (field.name === namePattern) return field;
+                } else {
+                    if (field.name.indexOf(namePattern) !== -1) return field;
+                }
+            }
+            return null;
+        },
+
+        /**
+         * Finds all fields matching a type.
+         */
+        findByType: function (type) {
+            var matches = [];
+            for (var i = 0; i < fluxxFields.length; i++) {
+                if (fluxxFields[i].type === type) {
+                    matches.push(fluxxFields[i]);
+                }
+            }
+            return matches;
+        },
+
+        /**
+         * Refreshes the value cache for all fields.
+         * Useful after external changes to the form.
+         */
+        refreshValues: function () {
+            for (var i = 0; i < fluxxFields.length; i++) {
+                var field = fluxxFields[i];
+                field.value = fluxxFieldUtils.getValue(field);
+            }
+        },
+    };
+
+    // ============================================================
+    // Expansion and Scanning API
+    // ============================================================
+
+    var fluxxAPI = {
+        /**
+         * Expands all collapsible/lazy-load sections within the active card,
+         * waits for content to render, then scans for fields.
+         *
+         * Returns a Promise that resolves with:
+         *   { fields: fluxxFields, failedSections: [\'section-name\', ...] }
+         *
+         * Side effect: Populates the global fluxxFields array.
+         */
+        expandAndScan: function () {
+            return new Promise(function (resolve) {
+                var activeCard = getActiveCard();
+
+                if (!activeCard) {
+                    resolve({
+                        fields: [],
+                        failedSections: [],
+                        error: "No active card found",
+                    });
+                    return;
+                }
+
+                var formBody = getFormBody(activeCard);
+                if (!formBody) {
+                    resolve({
+                        fields: [],
+                        failedSections: [],
+                        error: "No form body found",
+                    });
+                    return;
+                }
+
+                var failedSections = [];
+                var pendingExpansions = [];
+
+                // Find all collapsible sections
+                var collapsibles = formBody.querySelectorAll(
+                    CONFIG.COLLAPSIBLE_SELECTOR,
+                );
+                var lazyLoads = formBody.querySelectorAll(
+                    CONFIG.LAZY_LOAD_SELECTOR,
+                );
+
+                // Combine and dedupe (lazy-load may be inside collapsible)
+                var sections = [];
+                var seen = new WeakSet();
+
+                for (var i = 0; i < collapsibles.length; i++) {
+                    if (!seen.has(collapsibles[i])) {
+                        sections.push(collapsibles[i]);
+                        seen.add(collapsibles[i]);
+                    }
+                }
+
+                for (var j = 0; j < lazyLoads.length; j++) {
+                    if (!seen.has(lazyLoads[j])) {
+                        sections.push(lazyLoads[j]);
+                        seen.add(lazyLoads[j]);
+                    }
+                }
+
+                /**
+                 * Expands a single section and returns a Promise that resolves
+                 * when the content is loaded.
+                 */
+                function expandSection(section) {
+                    return new Promise(function (resolveSection) {
+                        // Skip if already expanded
+                        if (expandedSections.has(section)) {
+                            resolveSection(true);
+                            return;
+                        }
+
+                        // Get section name for error reporting
+                        var sectionName =
+                            section.getAttribute("data-section") ||
+                            section.getAttribute("id") ||
+                            (section.querySelector("h3") || {}).textContent ||
+                            "unknown";
+                        sectionName = sectionName.replace(/^\s+|\s+$/g, "");
+
+                        // Check if section is collapsed
+                        var isCollapsed =
+                            section.classList.contains("collapsed") ||
+                            !section.classList.contains("expanded");
+
+                        // Check for lazy-load that hasn't loaded
+                        var isLazyUnloaded =
+                            section.classList.contains("lazy-load") &&
+                            !section.classList.contains("loaded");
+
+                        if (!isCollapsed && !isLazyUnloaded) {
+                            // Already expanded and loaded
+                            expandedSections.add(section);
+                            resolveSection(true);
+                            return;
+                        }
+
+                        // Find and click the expand trigger
+                        var trigger = section.querySelector(
+                            ".collapsible-header, .header, h3, .expand-trigger",
+                        );
+                        if (!trigger) {
+                            trigger = section; // Some sections are themselves clickable
+                        }
+
+                        // Set up mutation observer to detect content loading
+                        var observer = null;
+                        var timeoutId = null;
+                        var resolved = false;
+
+                        function cleanup() {
+                            if (observer) observer.disconnect();
+                            if (timeoutId) clearTimeout(timeoutId);
+                        }
+
+                        function done(success) {
+                            if (resolved) return;
+                            resolved = true;
+                            cleanup();
+
+                            if (success) {
+                                expandedSections.add(section);
+                            } else {
+                                failedSections.push(sectionName);
+                            }
+
+                            resolveSection(success);
+                        }
+
+                        // Watch for DOM changes indicating content loaded
+                        observer = new MutationObserver(function (mutations) {
+                            // Look for signs that content has been added
+                            for (var m = 0; m < mutations.length; m++) {
+                                var mutation = mutations[m];
+                                if (mutation.addedNodes.length > 0) {
+                                    // Content added, wait a bit for rendering
+                                    setTimeout(function () {
+                                        done(true);
+                                    }, 200);
+                                    return;
+                                }
+                            }
+
+                            // Also check if section is now marked as expanded/loaded
+                            if (
+                                section.classList.contains("expanded") ||
+                                section.classList.contains("loaded") ||
+                                !section.classList.contains("collapsed")
+                            ) {
+                                setTimeout(function () {
+                                    done(true);
+                                }, 200);
+                            }
+                        });
+
+                        observer.observe(section, {
+                            childList: true,
+                            subtree: true,
+                            attributes: true,
+                            attributeFilter: ["class"],
+                        });
+
+                        // Timeout fallback
+                        timeoutId = setTimeout(function () {
+                            // Even on timeout, section might have expanded
+                            if (
+                                section.classList.contains("expanded") ||
+                                !section.classList.contains("collapsed")
+                            ) {
+                                done(true);
+                            } else {
+                                done(false);
+                            }
+                        }, CONFIG.EXPAND_TIMEOUT_MS);
+
+                        // Trigger expansion
+                        try {
+                            // Try multiple methods to trigger expansion
+                            trigger.click();
+
+                            // Some Fluxx versions use custom events
+                            var customEvent = new CustomEvent("expand", {
+                                bubbles: true,
+                            });
+                            section.dispatchEvent(customEvent);
+
+                            // Check immediately in case expansion is synchronous
+                            setTimeout(function () {
+                                if (
+                                    !resolved &&
+                                    (section.classList.contains("expanded") ||
+                                        !section.classList.contains(
+                                            "collapsed",
+                                        ))
+                                ) {
+                                    done(true);
+                                }
+                            }, 100);
+                        } catch (e) {
+                            done(false);
+                        }
+                    });
+                }
+
+                // Expand all sections sequentially to avoid overwhelming the page
+                function expandAllSequentially(index) {
+                    if (index >= sections.length) {
+                        // All sections processed, now scan fields
+                        fluxxFields.length = 0; // Clear existing
+                        var scanned = scanFields(formBody);
+                        for (var k = 0; k < scanned.length; k++) {
+                            fluxxFields.push(scanned[k]);
+                        }
+
+                        resolve({
+                            fields: fluxxFields,
+                            failedSections: failedSections,
+                        });
+                        return;
+                    }
+
+                    expandSection(sections[index]).then(function () {
+                        // Small delay between expansions to let the page breathe
+                        setTimeout(function () {
+                            expandAllSequentially(index + 1);
+                        }, 50);
+                    });
+                }
+
+                // Start expansion
+                if (sections.length === 0) {
+                    // No sections to expand, just scan
+                    fluxxFields.length = 0;
+                    var scanned = scanFields(formBody);
+                    for (var k = 0; k < scanned.length; k++) {
+                        fluxxFields.push(scanned[k]);
+                    }
+                    resolve({
+                        fields: fluxxFields,
+                        failedSections: [],
+                    });
+                } else {
+                    expandAllSequentially(0);
+                }
+            });
+        },
+
+        /**
+         * Performs a quick scan of visible fields without expanding sections.
+         * Populates fluxxFields and returns the array.
+         */
+        quickScan: function () {
+            var activeCard = getActiveCard();
+            if (!activeCard) return [];
+
+            var formBody = getFormBody(activeCard);
+            if (!formBody) return [];
+
+            fluxxFields.length = 0;
+            var scanned = scanFields(formBody);
+            for (var i = 0; i < scanned.length; i++) {
+                fluxxFields.push(scanned[i]);
+            }
+
+            return fluxxFields;
+        },
+
+        /**
+         * Resets the expansion tracker, allowing sections to be re-expanded.
+         * Useful if the card content has been refreshed.
+         */
+        resetExpansionState: function () {
+            expandedSections = new WeakSet();
+        },
+
+        /**
+         * Returns info about the current active card.
+         */
+        getActiveCardInfo: function () {
+            var card = getActiveCard();
+            if (!card) return null;
+
+            return {
+                element: card,
+                id:
+                    card.getAttribute("data-model-id") ||
+                    card.getAttribute("id"),
+                type: card.getAttribute("data-model-type") || "unknown",
+                hasFormBody: !!getFormBody(card),
+            };
+        },
+    };
+
+    // ============================================================
+    // Drag and Drop Targets
+    // ============================================================
+
+    // Field types that cannot accept arbitrary dragged text.
+    // Selects require an exact option match, so free-text drop
+    // would silently fail or corrupt the value. Exclude them.
+    var NON_DROPPABLE_TYPES = { select: true };
+
+    /**
+     * Builds the list of droppable targets from fluxxFields,
+     * filtering out field types that don't support free-text drop.
+     */
+    function getDroppableTargets() {
+        var droppable = [];
+        for (var i = 0; i < fluxxFields.length; i++) {
+            var f = fluxxFields[i];
+            if (!NON_DROPPABLE_TYPES[f.type]) {
+                droppable.push({
+                    element: f.element,
+                    name: f.name,
+                    label: f.label,
+                    field: f,
+                });
+            }
+        }
+        return droppable;
+    }
+
+    var DropTargetManager = {
+        scanTargets: function () {
+            fluxxAPI.expandAndScan();
+            // var result = fluxxAPI.expandAndScan();
+            return getDroppableTargets();
+        },
+
+        // drag-over / drop on all targets
+        activate: function () {
+            var targets = getDroppableTargets();
+            targets.forEach(function (t) {
+                var el = t.element;
+
+                el.addEventListener("dragover", function (e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "copy";
+                    el.classList.add("drop-target-hover");
+                });
+
+                el.addEventListener("dragleave", function () {
+                    el.classList.remove("drop-target-hover");
+                });
+
+                el.addEventListener("drop", function (e) {
+                    e.preventDefault();
+                    el.classList.remove("drop-target-hover");
+                    el.classList.remove("drop-target-active");
+
+                    var value = e.dataTransfer.getData("text/plain");
+                    if (value) {
+                        fluxxFieldUtils.setValue(t.field, value);
+                        // Flash green
+                        var formField = el.closest(".form-field");
+                        if (formField) {
+                            formField.classList.add("drop-success");
+                            setTimeout(function () {
+                                formField.classList.remove("drop-success");
+                            }, 500);
+                        }
+                    }
+                });
+            });
+        },
+
+        // Highlight all targets (called when any drag starts)
+        showTargets: function () {
+            var targets = getDroppableTargets();
+            targets.forEach(function (t) {
+                t.element.classList.add("drop-target-active");
+            });
+        },
+
+        // Remove highlights (called when drag ends)
+        hideTargets: function () {
+            var targets = getDroppableTargets();
+            targets.forEach(function (t) {
+                t.element.classList.remove("drop-target-active");
+                t.element.classList.remove("drop-target-hover");
+            });
+        },
+    };
+
+    // ============================================================
+    // Expose Globals
+    // ============================================================
+    window.fluxxFields = fluxxFields;
+    window.fluxxFieldUtils = fluxxFieldUtils;
+    window.fluxxAPI = fluxxAPI;
+    window.DropTargetManager = DropTargetManager;
+
+    // The account-exists gate (show/hide of the session controls off the
+    // native grant_request[pdc_account_exists] dropdown) is owned solely by
+    // the behavior file (block 5) via syncSessionControls(). The former
+    // block-2 gate here was removed: it resolved #pdc-session-controls by a
+    // literal id that Fluxx renames per card (only data-original-id is
+    // preserved), so it never matched and was dead code.
+</script>

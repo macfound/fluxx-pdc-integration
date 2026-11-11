@@ -1,0 +1,631 @@
+{
+  "elements": [
+    {
+      "config": {
+        "collapsible": "0",
+        "default_open": "0",
+        "disable_lazy_load": "0",
+        "hide_label": true,
+        "label": "(if consent granted: green)",
+        "reveal_if_type": "show",
+        "show_in_toc": "0"
+      },
+      "element_type": "group",
+      "elements": [
+        {
+          "config": {
+            "allow_script": "0",
+            "strip_html": "0",
+            "text": "{{ model.grant_or_request_id.grant_or_request_id }}<br/>\n<strong>{{ model.consent_type }}</strong>"
+          },
+          "element_type": "text",
+          "name": "text",
+          "styling": {
+            "alignment": "left",
+            "background_color": "#fafafa",
+            "border_radius": "6",
+            "padding_left": "2"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "visible_list": true
+          }
+        }
+      ],
+      "label": "(if consent granted: green)",
+      "name": "group",
+      "styling": {
+        "alignment": "left",
+        "background_color": "#81d742",
+        "border_radius": "6",
+        "padding_left": "2"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[[\"consent_type\",\"eq\",\"10699983\"]],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "visible_list": true
+      }
+    },
+    {
+      "config": {
+        "collapsible": "0",
+        "default_open": "0",
+        "disable_lazy_load": "0",
+        "hide_label": true,
+        "label": "(if consent declined)",
+        "reveal_if_type": "show",
+        "show_in_toc": "0"
+      },
+      "element_type": "group",
+      "elements": [
+        {
+          "config": {
+            "allow_script": "0",
+            "strip_html": "0",
+            "text": "{{ model.grant_or_request_id.grant_or_request_id }}<br/>\n<strong>{{ model.consent_type }}</strong>"
+          },
+          "element_type": "text",
+          "name": "text",
+          "styling": {
+            "alignment": "left",
+            "background_color": "#fafafa",
+            "padding_left": "2"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "visible_list": true
+          }
+        }
+      ],
+      "label": "(if consent declined)",
+      "name": "group",
+      "styling": {
+        "alignment": "left",
+        "background_color": "#dd3333",
+        "padding_left": "2"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[[\"consent_type\",\"eq\",\"10699984\"]],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "visible_list": true
+      }
+    },
+    {
+      "config": {
+        "collapsible": "0",
+        "default_open": "0",
+        "disable_lazy_load": "0",
+        "hide_label": true,
+        "label": "(consent not selected)",
+        "reveal_if_type": "show",
+        "show_in_toc": "0"
+      },
+      "element_type": "group",
+      "elements": [
+        {
+          "config": {
+            "allow_script": "0",
+            "strip_html": "0",
+            "text": "{{ model.grant_or_request_id.grant_or_request_id }}<br/>\n<strong>{{ model.consent_type }}</strong>"
+          },
+          "element_type": "text",
+          "name": "text",
+          "styling": {
+            "alignment": "left",
+            "background_color": "#fafafa",
+            "padding_left": "2"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[[\"consent_type\",\"eq\",\"\"]],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "visible_list": true
+          }
+        }
+      ],
+      "label": "(consent not selected)",
+      "name": "group",
+      "styling": {
+        "alignment": "left",
+        "background_color": "#1e73be",
+        "padding_left": "2"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[[\"consent_type\",\"eq\",\"\"]],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "visible_list": true
+      }
+    },
+    {
+      "config": {
+        "allow_script": "0",
+        "strip_html": "0",
+        "text": "{{ model.CurrentConsentLanguage }}"
+      },
+      "element_type": "text",
+      "name": "text",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "number_of_lines": "1"
+      },
+      "element_type": "spacer",
+      "name": "spacer",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "collapsible": true,
+        "default_open": "0",
+        "disable_lazy_load": "0",
+        "hide_label": "0",
+        "label": "What Data Will Be Sent To The PDC?",
+        "reveal_if_type": "show",
+        "show_in_toc": "0"
+      },
+      "element_type": "group",
+      "elements": [
+        {
+          "config": {
+            "allow_script": true,
+            "strip_html": "0",
+            "text": "{% assign pdc_preview = model.PDC_Data_Preview %}\n\n<div class=\"pdc-data-preview\">\n\n  <table class=\"pdc-fields-table\">\n    <thead>\n      <tr>\n        <th>Field Name</th>\n        <th>Value</th>\n      </tr>\n    </thead>\n    <tbody>\n      {% if pdc_preview.error %}<tr class=\"no-value\"><td colspan=\"2\"><em>{{ pdc_preview.error | escape }}</em></td></tr>{% endif %}\n      {% for field in pdc_preview.display_fields %}\n      <tr class=\"{% unless field.has_value %}no-value{% endunless %}\">\n        <td>{{ field.field_name }}</td>\n        <td>\n          {% if field.has_value %}\n            {{ field.value }}\n          {% else %}\n            <em>No data</em>\n          {% endif %}\n        </td>\n      </tr>\n      {% endfor %}\n    </tbody>\n  </table>\n\n  <style>\n    .pdc-data-preview {\n      margin: 20px 0;\n    }\n    .pdc-fields-table {\n      width: 100%;\n      border-collapse: collapse;\n      margin-top: 15px;\n    }\n    .pdc-fields-table th {\n      background-color: #f0f0f0;\n      padding: 10px;\n      text-align: left;\n      border-bottom: 2px solid #ddd;\n    }\n    .pdc-fields-table td {\n      padding: 8px;\n      border-bottom: 1px solid #eee;\n    }\n    .pdc-fields-table tbody tr:nth-child(even) {\n      background-color: #f8f8f8;\n    }\n    .pdc-fields-table tr.no-value td {\n      color: #999;\n    }\n    .summary {\n      background-color: #f9f9f9;\n      padding: 10px;\n      border-radius: 4px;\n      margin: 10px 0;\n    }\n  </style>\n</div>"
+          },
+          "element_type": "text",
+          "name": "text",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "visible_form": true,
+            "visible_show": true
+          }
+        }
+      ],
+      "label": "What Data Will Be Sent To The PDC?",
+      "name": "group",
+      "styling": {
+        "alignment": "left",
+        "border_bottom_enabled": true,
+        "border_left_enabled": true,
+        "border_right_enabled": true,
+        "border_top_enabled": true,
+        "padding_bottom": "10",
+        "padding_left": "10",
+        "padding_right": "10",
+        "padding_top": "10"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "number_of_lines": "1"
+      },
+      "element_type": "spacer",
+      "name": "spacer",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "label": "Share Data with PDC?",
+        "required": "0",
+        "show_as_radio_buttons": "0"
+      },
+      "element_type": "attribute",
+      "label": "Share Data with PDC?",
+      "name": "consent_type",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "collapsible": "0",
+        "default_open": "0",
+        "disable_lazy_load": "0",
+        "hide_label": "0",
+        "label": "Read-Only fields",
+        "reveal_if_attribute": "consent_type",
+        "reveal_if_type": "hide",
+        "show_in_toc": "0"
+      },
+      "element_type": "group",
+      "elements": [
+        {
+          "config": {
+            "label": "Data Sharing Consent - Granted At",
+            "required": "0"
+          },
+          "element_type": "attribute",
+          "label": "Data Sharing Consent - Granted At",
+          "name": "granted_at",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"User\"}",
+            "advanced_sort": "[]",
+            "dropdown_filter": "[{\"name\":\"advanced_filter\",\"value\":\"1\"},{\"name\":\"advanced_query\",\"value\":\"{\\\"group_type\\\":\\\"and\\\",\\\"conditions\\\":[],\\\"relationship_filter_model_type\\\":\\\"User\\\"}\"},{\"name\":\"advanced_sort\",\"value\":\"[]\"}]",
+            "label": "Data Sharing Consent - Granted By",
+            "required": "0"
+          },
+          "element_type": "attribute",
+          "label": "Data Sharing Consent - Granted By",
+          "name": "granted_by.full_name",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "visible_show": true
+          }
+        }
+      ],
+      "label": "Read-Only fields",
+      "name": "group",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "number_of_lines": "1"
+      },
+      "element_type": "spacer",
+      "name": "spacer",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "user_profile": [
+          "974"
+        ],
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "collapsible": "0",
+        "default_open": "0",
+        "disable_lazy_load": "0",
+        "hide_label": "0",
+        "label": "Administrative Fields",
+        "reveal_if_type": "show",
+        "show_in_toc": "0"
+      },
+      "element_type": "group",
+      "elements": [
+        {
+          "config": {
+            "collapsible": true,
+            "default_open": "0",
+            "disable_lazy_load": "0",
+            "hide_label": "0",
+            "label": "Expand to View Language Shown At Time Of Consent",
+            "reveal_if_type": "show",
+            "show_in_toc": "0"
+          },
+          "element_type": "group",
+          "elements": [
+            {
+              "config": {
+                "allow_script": "0",
+                "strip_html": "0",
+                "text": "{{ model.consent_language }}"
+              },
+              "element_type": "text",
+              "name": "text",
+              "styling": {
+                "alignment": "left"
+              },
+              "visibility": {
+                "advanced_filter": "1",
+                "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+                "advanced_sort": "[]",
+                "visible_form": true,
+                "visible_show": true
+              }
+            }
+          ],
+          "label": "Expand to View Language Shown At Time Of Consent",
+          "name": "group",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "label": "Consent Language Version",
+            "required": "0"
+          },
+          "element_type": "attribute",
+          "label": "Consent Language Version",
+          "name": "consent_language_version",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "lock_field": true,
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "allow_rich_text": "0",
+            "label": "Grant Data at Time of Consent",
+            "required": "0",
+            "trackable": "0",
+            "trackable_workflow": "0"
+          },
+          "element_type": "attribute",
+          "label": "Grant Data at Time of Consent",
+          "name": "grant_data_at_time_of_consent",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "lock_field": true,
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "label": "Grant Data at Time of Transmission",
+            "required": "0"
+          },
+          "element_type": "attribute",
+          "label": "Grant Data at Time of Transmission",
+          "name": "grant_data_at_time_of_transmission",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "lock_field": true,
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "label": "Granted By First Name",
+            "required": "0"
+          },
+          "element_type": "attribute",
+          "label": "Granted By First Name",
+          "name": "granted_by_first_name",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "lock_field": true,
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "label": "Granted By Last Name",
+            "required": "0"
+          },
+          "element_type": "attribute",
+          "label": "Granted By Last Name",
+          "name": "granted_by_last_name",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "lock_field": true,
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "label": "Granted At",
+            "required": "0"
+          },
+          "element_type": "attribute",
+          "label": "Granted At",
+          "name": "granted_at",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "lock_field": true,
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"User\"}",
+            "advanced_sort": "[]",
+            "dropdown_filter": "[{\"name\":\"advanced_filter\",\"value\":\"1\"},{\"name\":\"advanced_query\",\"value\":\"{\\\"group_type\\\":\\\"and\\\",\\\"conditions\\\":[],\\\"relationship_filter_model_type\\\":\\\"User\\\"}\"},{\"name\":\"advanced_sort\",\"value\":\"[]\"}]",
+            "label": "Granted By",
+            "required": "0"
+          },
+          "element_type": "attribute",
+          "label": "Granted By",
+          "name": "granted_by.full_name",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "lock_field": true,
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "label": "History"
+          },
+          "element_type": "component",
+          "label": "History",
+          "legacy": null,
+          "name": "audits",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+            "advanced_sort": "[]",
+            "visible_form": true,
+            "visible_show": true
+          }
+        }
+      ],
+      "label": "Administrative Fields",
+      "name": "group",
+      "styling": {
+        "alignment": "left",
+        "border_bottom_enabled": true,
+        "border_left_enabled": true,
+        "border_radius": "7",
+        "border_right_enabled": true,
+        "border_top_enabled": true,
+        "padding_bottom": "7",
+        "padding_left": "7",
+        "padding_right": "7",
+        "padding_top": "7"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]",
+        "read_only_states": [
+          "all"
+        ],
+        "user_profile": [
+          "974"
+        ],
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "boolean_default": "Blank",
+        "label": "Send This Data To The PDC Now (optional)",
+        "required": "0",
+        "widget_type": "Checkbox"
+      },
+      "element_type": "attribute",
+      "label": "Send This Data To The PDC Now (optional)",
+      "name": "send_to_pdc_now",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcConsent\"}",
+        "advanced_sort": "[]"
+      }
+    }
+  ]
+}

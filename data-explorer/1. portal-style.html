@@ -1,0 +1,797 @@
+<style>
+    /* PDC:ELEMENT id=portal-style */
+    /* Floating Panel */
+    .pdc-floating-panel {
+        position: fixed;
+        top: 50px;
+        left: 50px;
+        width: 480px;
+        height: 550px;
+        min-width: 320px;
+        min-height: 200px;
+        max-width: 90vw;
+        max-height: 90vh;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        resize: both;
+        overflow: hidden;
+        z-index: 10000;
+    }
+
+    .pdc-panel-header {
+        background: #2c3e50;
+        color: white;
+        padding: 10px 14px;
+        cursor: move;
+        user-select: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .pdc-panel-header h2 {
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .pdc-panel-controls {
+        display: flex;
+        gap: 8px;
+    }
+
+    .pdc-panel-controls button {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 2px 6px;
+        opacity: 0.8;
+    }
+
+    .pdc-panel-controls button:hover {
+        opacity: 1;
+    }
+
+    .pdc-panel-search {
+        padding: 10px;
+        border-bottom: 1px solid #e0e0e0;
+        flex-shrink: 0;
+    }
+
+    .pdc-panel-search input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .pdc-panel-search input:focus {
+        outline: none;
+        border-color: #3498db;
+    }
+
+    .pdc-panel-body {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        min-width: 0;
+    }
+
+    /* Ensure all content containers stretch to fill available
+     width and don't cache a narrower size after a shrink. */
+    .pdc-entry-item,
+    .pdc-entry-content,
+    .pdc-version-section,
+    .pdc-version-content {
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    /* Entry (Proposal) */
+    .pdc-entry-item {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .pdc-entry-item:last-child {
+        border-bottom: none;
+    }
+
+    .pdc-entry-header {
+        display: flex;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        padding: 12px;
+        cursor: pointer;
+        gap: 6px 10px;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+        background: none;
+        border: none;
+        font: inherit;
+    }
+
+    .pdc-entry-header:hover {
+        background: #f8f9fa;
+    }
+
+    .pdc-entry-toggle {
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: #666;
+        flex-shrink: 0;
+        margin-top: 2px;
+        transition: transform 0.15s;
+    }
+
+    .pdc-entry-item.expanded > .pdc-entry-header .pdc-entry-toggle {
+        transform: rotate(90deg);
+    }
+
+    .pdc-entry-info {
+        flex: 1 1 0%;
+        min-width: 0;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .pdc-entry-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 4px;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .pdc-entry-meta {
+        font-size: 12px;
+        color: #666;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+    }
+
+    .pdc-entry-meta span {
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .pdc-entry-id {
+        background: #e9ecef;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-family: monospace;
+        color: #495057;
+        flex-shrink: 0;
+        align-self: flex-start;
+    }
+
+    .pdc-entry-content {
+        display: none;
+        background: #fafafa;
+        border-top: 1px solid #eee;
+    }
+
+    .pdc-entry-item.expanded > .pdc-entry-content {
+        display: block;
+    }
+
+    /* Version Section */
+    .pdc-version-section {
+        border-bottom: 1px solid #e8e8e8;
+    }
+
+    .pdc-version-section:last-child {
+        border-bottom: none;
+    }
+
+    .pdc-version-header {
+        padding: 10px 12px 10px 40px;
+        background: #f0f0f0;
+        cursor: pointer;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 4px 12px;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+        border: none;
+        font: inherit;
+    }
+
+    .pdc-version-header:hover {
+        background: #e8e8e8;
+    }
+
+    .pdc-version-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #444;
+        min-width: 0;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .pdc-version-meta {
+        font-size: 11px;
+        color: #adb5bd;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* Field Values */
+    .pdc-field-item {
+        padding: 10px 12px 10px 52px;
+        border-bottom: 1px solid #eee;
+        background: #fff;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .pdc-field-item:last-child {
+        border-bottom: none;
+    }
+
+    .pdc-field-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 2px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 8px;
+    }
+
+    .pdc-field-position {
+        background: #dee2e6;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: normal;
+        color: #495057;
+    }
+
+    .pdc-field-instructions {
+        font-size: 11px;
+        color: #6c757d;
+        font-style: italic;
+        margin-bottom: 6px;
+    }
+
+    .pdc-field-value {
+        font-size: 13px;
+        color: #212529;
+        background: #f8f9fa;
+        padding: 8px 10px;
+        border-radius: 4px;
+        border-left: 3px solid #3498db;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .pdc-field-value.empty {
+        color: #adb5bd;
+        font-style: italic;
+        border-left-color: #dee2e6;
+    }
+
+    /* Long text handling */
+    .pdc-field-value.truncated {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: unset;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .pdc-field-value.truncated.expanded-text {
+        display: block;
+        -webkit-line-clamp: unset;
+        line-clamp: unset;
+    }
+
+    .pdc-text-toggle {
+        color: #2980b9;
+        cursor: pointer;
+        font-size: 11px;
+        margin-top: 4px;
+        display: inline-block;
+    }
+
+    .pdc-text-toggle:hover {
+        text-decoration: underline;
+    }
+
+    /* Load more */
+    .pdc-load-more {
+        padding: 8px 12px 8px 52px;
+        font-size: 12px;
+        color: #2980b9;
+        cursor: pointer;
+        background: #f5f5f5;
+    }
+
+    .pdc-load-more:hover {
+        background: #eee;
+    }
+
+    /* Hidden items */
+    .hidden {
+        display: none !important;
+    }
+
+    /* No results */
+    .pdc-no-results {
+        padding: 40px 20px;
+        text-align: center;
+        color: #adb5bd;
+    }
+    .pdc-load-more {
+        padding: 12px 0;
+        text-align: center;
+    }
+
+    .pdc-auth-container {
+        padding: 20px 0px;
+    }
+    .pdc-button {
+        padding: 10px 20px;
+        font-size: 14px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        border-radius: 4px;
+    }
+    .pdc-button:hover {
+        background-color: #f5f5f5;
+    }
+    .pdc-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .pdc-user-info {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+    }
+    .pdc-drag-ghost {
+        position: fixed;
+        top: -1000px;
+        left: -1000px;
+        background: #2c3e50;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        max-width: 250px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        pointer-events: none;
+        z-index: 99999;
+    }
+    .hidden {
+        display: none;
+    }
+
+    /* Drop target states */
+    .drop-target-active {
+        border-color: #3498db !important;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15) !important;
+        background: #f0f7ff !important;
+    }
+    .drop-target-hover {
+        border-color: #2980b9 !important;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3) !important;
+        background: #e8f4fd !important;
+    }
+    .drop-success {
+        animation: dropFlash 0.4s ease;
+    }
+    @keyframes dropFlash {
+        0% {
+            background: #d4edda;
+        }
+        100% {
+            background: white;
+        }
+    }
+
+    /* ── Consent Status ─────────────────────────────────────── */
+    .pdc-consent-status {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px 14px;
+        border-radius: 4px;
+        font-size: 13px;
+        line-height: 1.4;
+        margin-bottom: 16px;
+    }
+
+    .pdc-consent-granted {
+        background: #d4edda;
+        border: 1px solid #b1dfbb;
+        color: #155724;
+    }
+
+    .pdc-consent-pending {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        color: #664d03;
+    }
+
+    .pdc-consent-icon {
+        flex-shrink: 0;
+        font-size: 16px;
+        line-height: 1.3;
+    }
+
+    .pdc-consent-text {
+        flex: 1;
+    }
+
+    .pdc-consent-link {
+        display: inline-block;
+        margin-top: 4px;
+        font-size: 13px;
+        color: inherit;
+        text-decoration: underline;
+    }
+
+    .pdc-consent-link:hover {
+        text-decoration: none;
+    }
+
+    /* Emphasize the call-to-action when consent is not yet granted */
+    .pdc-consent-action {
+        font-weight: 600;
+    }
+
+    /* Focus ring for the consent link (WCAG AA) */
+    .pdc-consent-link:focus-visible {
+        outline: 2px solid #2c3e50;
+        outline-offset: 2px;
+        border-radius: 2px;
+    }
+
+    /* ── Guide Section ──────────────────────────────────────── */
+    .pdc-guide {
+        margin-bottom: 16px;
+        padding: 14px 16px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+    }
+
+    .pdc-guide-heading {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0 0 10px 0;
+        padding: 0;
+    }
+
+    .pdc-guide-steps {
+        margin: 0;
+        padding: 0 0 0 20px;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #495057;
+    }
+
+    .pdc-guide-steps li {
+        margin-bottom: 8px;
+    }
+
+    .pdc-guide-steps li:last-child {
+        margin-bottom: 0;
+    }
+
+    .pdc-guide-steps a {
+        color: #2980b9;
+        text-decoration: underline;
+    }
+
+    .pdc-guide-steps a:hover {
+        text-decoration: none;
+    }
+
+    .pdc-guide-steps a:focus-visible {
+        outline: 2px solid #2c3e50;
+        outline-offset: 2px;
+        border-radius: 2px;
+    }
+
+    /* ── Screen-reader-only utility ──────────────────────────
+     The stencil (file 4) uses .sr-only on several spans but the
+     class was never defined here, so those texts were rendering
+     visibly. Standard visually-hidden pattern, keyboard-safe. */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* ── PDC Journey ─────────────────────────────────────────
+     Two-phase map of the PDC process. Only the consent step has a
+     real completion state (server-side has_consent). Steps 3 and 4
+     are "later" markers, not actions, because a new org gets nothing
+     back from login yet. State is carried in text, never color alone
+     (WCAG 1.4.1). */
+    .pdc-journey {
+        margin-bottom: 20px;
+        padding: 16px 18px;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+    }
+
+    .pdc-journey-heading {
+        font-size: 15px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0 0 12px 0;
+        padding: 0;
+    }
+
+    .pdc-phase-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #6c757d;
+        margin: 16px 0 10px 0;
+    }
+
+    .pdc-phase-label:first-of-type {
+        margin-top: 0;
+    }
+
+    .pdc-steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .pdc-step {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 0 0 18px 0;
+    }
+
+    .pdc-step:last-child {
+        padding-bottom: 0;
+    }
+
+    /* Connector line between markers. Decorative only. */
+    .pdc-step:not(:last-child)::before {
+        content: "";
+        position: absolute;
+        left: 13px; /* center of the 28px marker */
+        top: 28px;
+        bottom: 0;
+        width: 2px;
+        background: #e0e0e0;
+    }
+
+    .pdc-step-marker {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1;
+        box-sizing: border-box;
+        z-index: 1;
+    }
+
+    .pdc-step-body {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        padding-top: 3px;
+    }
+
+    .pdc-step-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3e50;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .pdc-step-state {
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .pdc-state-complete {
+        color: #155724;
+        font-weight: 600;
+    }
+
+    .pdc-state-action {
+        color: #92400e; /* dark amber, AA on white */
+        font-weight: 600;
+    }
+
+    /* Declined is a decision, not a missing step: neutral, not amber */
+    .pdc-state-declined {
+        color: #495057;
+        font-weight: 600;
+    }
+
+    /* Marker states */
+    .pdc-step--available .pdc-step-marker {
+        background: #fff;
+        border: 2px solid #3498db;
+        color: #1f6391;
+    }
+
+    .pdc-step--complete .pdc-step-marker {
+        background: #1e7e34;
+        color: #fff;
+    }
+
+    .pdc-step--declined .pdc-step-marker {
+        background: #6c757d;
+        color: #fff;
+    }
+
+    .pdc-step--action .pdc-step-marker {
+        background: #fff;
+        border: 2px solid #3498db;
+        color: #1f6391;
+    }
+
+    .pdc-step--later .pdc-step-marker {
+        background: #fff;
+        border: 2px solid #ced4da;
+        color: #adb5bd;
+    }
+
+    .pdc-step--later .pdc-step-title {
+        color: #6c757d;
+    }
+
+    /* Links inside steps */
+    .pdc-step-link {
+        font-size: 12px;
+        color: #1f6391;
+        text-decoration: underline;
+        margin-top: 2px;
+        align-self: flex-start;
+    }
+
+    .pdc-step-link:hover {
+        text-decoration: none;
+    }
+
+    .pdc-step-link:focus-visible,
+    .pdc-step-cta:focus-visible {
+        outline: 2px solid #2c3e50;
+        outline-offset: 2px;
+        border-radius: 3px;
+    }
+
+    /* Matches the login buttons (.pdc-button): white bg, grey border,
+       dark text. Kept as an <a class="to-modal"> so native Fluxx still
+       opens the consent modal. */
+    .pdc-step-cta {
+        display: inline-block;
+        margin-top: 6px;
+        padding: 8px 16px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        color: #2c3e50;
+        font-size: 14px;
+        text-decoration: none;
+        border-radius: 4px;
+        align-self: flex-start;
+    }
+
+    /* Fluxx's portal CSS applies `.card a { font-weight: bold }` and
+       `.card .detail a { color: #0047bb }` (blue) to every anchor in a card,
+       which re-bolds and re-colors our step links/CTA (they are <a>s). Scope
+       through .pdc-step-body so these selectors clearly out-specify Fluxx's
+       (0,3,1 > 0,2,1, so load order doesn't matter) and render the consent
+       CTA like the login buttons: normal weight, black text. */
+    .pdc-journey .pdc-step-body a.pdc-step-cta,
+    .pdc-journey .pdc-step-body a.pdc-step-link {
+        font-weight: normal;
+    }
+
+    .pdc-journey .pdc-step-body a.pdc-step-cta {
+        color: #000;
+    }
+
+    .pdc-step-cta:hover {
+        background-color: #f5f5f5;
+        text-decoration: none;
+    }
+
+    /* Account gate: the grantee answers a PROXY <select> we author in journey
+       Step 3 (survives the consent refreshCaller because it re-renders with the
+       journey). The NATIVE Fluxx field stays hidden in its own slot — Fluxx
+       still owns + saves it; the behavior file syncs proxy <-> native. */
+    li.notable[data-notable-attribute="pdc_account_exists"] {
+        display: none !important;
+    }
+
+    .pdc-account-gate {
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .pdc-account-gate-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .pdc-account-gate-select {
+        max-width: 260px;
+        padding: 8px 10px;
+        font-size: 13px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #fff;
+    }
+
+    .pdc-account-gate-select:focus-visible {
+        outline: 2px solid #2c3e50;
+        outline-offset: 1px;
+        border-color: #3498db;
+    }
+
+    .pdc-step--active .pdc-step-marker {
+        background: #fff;
+        border: 2px solid #3498db;
+        color: #1f6391;
+    }
+
+    .pdc-step--active .pdc-step-title {
+        color: #2c3e50;
+    }
+
+    .pdc-step--active .pdc-step-state {
+        display: none;
+    }
+
+    /* Session controls nested under journey step 3 */
+    .pdc-session-controls {
+        margin-top: 10px;
+    }
+</style>

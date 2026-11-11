@@ -1,0 +1,488 @@
+<script>
+    // PDC:ELEMENT id=oauth-client
+    // OauthClient implementation for PDC integration in Fluxx
+    if (!window._pdcOAuthInitialized && window.isInGranteePortal) {
+        window._pdcOAuthInitialized = true;
+
+        class OAuthClient {
+            // Initialize OAuth client
+            constructor(config) {
+                this.config = {
+                    authorizationEndpoint:
+                        "https://auth.philanthropydatacommons.org/realms/pdc/protocol/openid-connect/auth",
+                    tokenEndpoint:
+                        "https://auth.philanthropydatacommons.org/realms/pdc/protocol/openid-connect/token",
+                    clientId: "pdc-fluxx-macfound",
+                    redirectUri: window.location.origin,
+                    scope: "openid profile roles",
+                    popupWidth: 500,
+                    popupHeight: 700,
+                };
+                this.tokenKey = "pdc_oauth_tokens";
+                this.stateKey = "pdc_oauth_state";
+                this.codeVerifierKey = "pdc_oauth_code_verifier";
+                this.popupWindow = null;
+                this.popupCheckInterval = null;
+            }
+
+            generateRandomString(length) {
+                const array = new Uint8Array(length);
+                crypto.getRandomValues(array);
+                return Array.from(array, (byte) =>
+                    byte.toString(16).padStart(2, "0"),
+                ).join("");
+            }
+
+            async generatePKCE() {
+                const codeVerifier = this.generateRandomString(32);
+                const encoder = new TextEncoder();
+                const data = encoder.encode(codeVerifier);
+                const digest = await crypto.subtle.digest("SHA-256", data);
+                const codeChallenge = btoa(
+                    String.fromCharCode(...new Uint8Array(digest)),
+                )
+                    .replace(/\+/g, "-")
+                    .replace(/\//g, "_")
+                    .replace(/=+$/, "");
+
+                return { codeVerifier, codeChallenge };
+            }
+
+            openPopup(url) {
+                const left =
+                    window.screenX +
+                    (window.outerWidth - this.config.popupWidth) / 2;
+                const top =
+                    window.screenY +
+                    (window.outerHeight - this.config.popupHeight) / 2;
+
+                const popup = window.open(
+                    url,
+                    "pdc_oauth_popup",
+                    `width=${this.config.popupWidth},height=${this.config.popupHeight},left=${left},top=${top},toolbar=no,menubar=no,location=no,status=no`,
+                );
+
+                if (!popup) {
+                    throw new Error(
+                        "Failed to open popup window. Please allow popups for this site.",
+                    );
+                }
+
+                return popup;
+            }
+
+            async loginWithPopup() {
+                return new Promise(async (resolve, reject) => {
+                    try {
+                        const state = this.generateRandomString(16);
+                        const { codeVerifier, codeChallenge } =
+                            await this.generatePKCE();
+
+                        sessionStorage.setItem(this.stateKey, state);
+                        sessionStorage.setItem(
+                            this.codeVerifierKey,
+                            codeVerifier,
+                        );
+
+                        const params = new URLSearchParams({
+                            response_type: "code",
+                            client_id: this.config.clientId,
+                            redirect_uri: this.config.redirectUri,
+                            scope: this.config.scope,
+                            state: state,
+                            code_challenge: codeChallenge,
+                            code_challenge_method: "S256",
+                        });
+
+                        // COOP `same-origin-allow-popups` severs window.opener
+                        // when the popup goes cross-origin to the auth server, so
+                        // the popup can't postMessage back. It lands same-origin
+                        // though, so it hands the result back via a BroadcastChannel
+                        // (instant) + a localStorage key (durable fallback). We open
+                        // the channel and the storage listener BEFORE opening the
+                        // popup so no result is missed, and also poll the key in case
+                        // the write lands before a listener attaches. The opener holds
+                        // the popup reference and closes it (opener->popup survives
+                        // COOP). onResult is dedup-guarded so channel/storage/poll fire
+                        // the handoff exactly once.
+                        const RESULT_KEY = "pdc_oauth_result";
+                        let settled = false;
+                        let bc = null;
+                        let pollInterval = null;
+
+                        const teardown = () => {
+                            window.removeEventListener("storage", storageHandler);
+                            if (pollInterval) {
+                                clearInterval(pollInterval);
+                                pollInterval = null;
+                            }
+                            if (this.popupCheckInterval) {
+                                clearInterval(this.popupCheckInterval);
+                                this.popupCheckInterval = null;
+                            }
+                            if (bc) {
+                                try {
+                                    bc.close();
+                                } catch (e) {}
+                                bc = null;
+                            }
+                        };
+
+                        const onResult = async (data) => {
+                            if (settled) return;
+                            if (!data || data.type !== "oauth_callback") return;
+                            settled = true;
+
+                            teardown();
+                            this.popupWindow?.close();
+                            try {
+                                localStorage.removeItem(RESULT_KEY);
+                            } catch (e) {}
+
+                            if (data.error) {
+                                reject(new Error(`OAuth error: ${data.error}`));
+                                return;
+                            }
+
+                            try {
+                                resolve(await this.handleCallbackData(data));
+                            } catch (error) {
+                                reject(error);
+                            }
+                        };
+
+                        // Normalize a stored result (no `type` field) to a message.
+                        const readStoredResult = () => {
+                            try {
+                                const raw = localStorage.getItem(RESULT_KEY);
+                                if (!raw) return null;
+                                const parsed = JSON.parse(raw);
+                                return {
+                                    type: "oauth_callback",
+                                    code: parsed.code,
+                                    state: parsed.state,
+                                    error: parsed.error,
+                                    error_description: parsed.error_description,
+                                };
+                            } catch (e) {
+                                return null;
+                            }
+                        };
+
+                        const storageHandler = (event) => {
+                            if (event.key !== RESULT_KEY || !event.newValue) return;
+                            const data = readStoredResult();
+                            if (data) onResult(data);
+                        };
+
+                        try {
+                            bc = new BroadcastChannel("pdc_oauth_channel");
+                            bc.onmessage = (event) => onResult(event.data);
+                        } catch (e) {
+                            bc = null;
+                        }
+                        window.addEventListener("storage", storageHandler);
+
+                        // Clear any stale result from a prior attempt before we start.
+                        try {
+                            localStorage.removeItem(RESULT_KEY);
+                        } catch (e) {}
+
+                        this.popupWindow = this.openPopup(
+                            `${this.config.authorizationEndpoint}?${params}`,
+                        );
+
+                        // The popup writes its result to localStorage/broadcast and
+                        // then closes ITSELF. Cross-window storage visibility is not
+                        // instantaneous, so `popup.closed` frequently flips true a beat
+                        // BEFORE the result is readable in this window. Treating a closed
+                        // popup as an immediate cancellation therefore races the result
+                        // and wrongly rejects with "cancelled" (the bug this fixes).
+                        //
+                        // So on close we DON'T reject right away: we enter a short grace
+                        // window, polling for the result, and only conclude "cancelled"
+                        // if nothing arrives within it. The BroadcastChannel/storage/poll
+                        // paths above still resolve the moment the result appears.
+                        let closedAt = 0;
+                        const GRACE_MS = 2000;
+                        this.popupCheckInterval = setInterval(() => {
+                            if (settled) return;
+
+                            // Always try the result first, regardless of popup state.
+                            const pending = readStoredResult();
+                            if (pending) {
+                                onResult(pending);
+                                return;
+                            }
+
+                            if (this.popupWindow?.closed) {
+                                if (!closedAt) {
+                                    closedAt = Date.now();
+                                    return; // start the grace window
+                                }
+                                if (Date.now() - closedAt < GRACE_MS) {
+                                    return; // still waiting for the result to land
+                                }
+                                // Grace elapsed with no result: real cancellation.
+                                settled = true;
+                                teardown();
+                                this.cleanup();
+                                reject(
+                                    new Error(
+                                        "Authentication cancelled by user",
+                                    ),
+                                );
+                            }
+                        }, 200);
+                    } catch (error) {
+                        this.cleanup();
+                        reject(error);
+                    }
+                });
+            }
+
+            async exchangeCodeForTokens(code, codeVerifier) {
+                const body = new URLSearchParams({
+                    grant_type: "authorization_code",
+                    code: code,
+                    redirect_uri: this.config.redirectUri,
+                    client_id: this.config.clientId,
+                    code_verifier: codeVerifier,
+                });
+
+                const response = await fetch(this.config.tokenEndpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: body.toString(),
+                });
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(
+                        `Token exchange failed: ${data.error || response.status}`,
+                    );
+                }
+
+                return await response.json();
+            }
+
+            // Handle callback data from popup
+            async handleCallbackData(data) {
+                const { code, state, error, error_description } = data;
+
+                if (error) {
+                    throw new Error(
+                        `OAuth error: ${error} - ${error_description || ""}`,
+                    );
+                }
+
+                if (!code) {
+                    throw new Error("No authorization code received");
+                }
+
+                const storedState = sessionStorage.getItem(this.stateKey);
+                // Validate state
+                if (!state || state !== storedState) {
+                    throw new Error("State mismatch - possible CSRF attack");
+                }
+
+                const codeVerifier = sessionStorage.getItem(
+                    this.codeVerifierKey,
+                );
+                // Exchange code for tokens
+                if (!codeVerifier) {
+                    throw new Error("Code verifier not found");
+                }
+
+                // const tokens = sessionStorage.getItem(this.pdc_oauth_tokens)
+                const tokens = await this.exchangeCodeForTokens(
+                    code,
+                    codeVerifier,
+                );
+
+                // Clean up
+                sessionStorage.removeItem(this.stateKey);
+                sessionStorage.removeItem(this.codeVerifierKey);
+
+                // Store tokens
+                this.saveTokens(tokens);
+
+                return tokens;
+            }
+
+            saveTokens(tokens) {
+                const tokenData = {
+                    accessToken: tokens.access_token,
+                    refreshToken: tokens.refresh_token,
+                    expiresAt: Date.now() + tokens.expires_in * 1000,
+                    idToken: tokens.id_token,
+                    tokenType: tokens.token_type || "Bearer",
+                };
+                // console.log('[PDC-OAuth] Saving tokens:', this.tokenKey);
+                localStorage.setItem(this.tokenKey, JSON.stringify(tokenData));
+            }
+
+            getTokens() {
+                const data = localStorage.getItem(this.tokenKey);
+                // console.log('[PDC-OAuth] Retrieving tokens:', this.tokenKey, data);
+                return data ? JSON.parse(data) : null;
+            }
+
+            isAuthenticated() {
+                try {
+                    // console.log('[PDC-OAuth] Checking authentication status');
+                    const tokenData = this.getTokens();
+                    if (!tokenData) {
+                        return false;
+                    }
+
+                    const bufferMs = 30 * 1000;
+                    const isExpired =
+                        Date.now() >= tokenData.expiresAt - bufferMs;
+
+                    return !isExpired;
+                } catch (error) {
+                    // console.error('[PDC-OAuth] Error checking authentication status:', error);
+                    return false;
+                }
+            }
+
+            logout() {
+                localStorage.removeItem(this.tokenKey);
+                sessionStorage.removeItem(this.stateKey);
+                sessionStorage.removeItem(this.codeVerifierKey);
+            }
+
+            cleanup() {
+                sessionStorage.removeItem(this.stateKey);
+                sessionStorage.removeItem(this.codeVerifierKey);
+                if (this.popupCheckInterval) {
+                    clearInterval(this.popupCheckInterval);
+                    this.popupCheckInterval = null;
+                }
+            }
+
+            async refreshAccessToken() {
+                const tokenData = this.getTokens();
+                if (!tokenData || !tokenData.refreshToken) {
+                    throw new Error("No refresh token available");
+                }
+
+                const body = new URLSearchParams({
+                    grant_type: "refresh_token",
+                    refresh_token: tokenData.refreshToken,
+                    client_id: this.config.clientId,
+                });
+
+                const response = await fetch(this.config.tokenEndpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: body.toString(),
+                });
+
+                if (!response.ok) {
+                    // Refresh failed, clear tokens and require re-authentication
+                    this.logout();
+                    throw new Error("Session expired. Please log in again.");
+                }
+
+                const tokens = await response.json();
+                this.saveTokens(tokens);
+                return tokens;
+            }
+
+            async getValidAccessToken() {
+                const tokenData = this.getTokens();
+                // // console.log('[PDC-OAuth] Current token data:', tokenData);
+                if (!tokenData) {
+                    throw new Error("No valid access token");
+                }
+
+                // Check if token is expired or about to expire (within 30 seconds)
+                const bufferMs = 30 * 1000;
+                if (Date.now() >= tokenData.expiresAt - bufferMs) {
+                    // console.log('[PDC-OAuth] Token expired or expiring soon, refreshing...');
+                    await this.refreshAccessToken();
+                    return this.getTokens().accessToken;
+                }
+
+                // // console.log('[PDC-OAuth] Using valid access token: ' + tokenData.accessToken);
+                return tokenData.accessToken;
+            }
+
+            async authenticatedFetch(url, options = {}) {
+                const makeRequest = async (token, tokenType) => {
+                    return fetch(url, {
+                        ...options,
+                        headers: {
+                            ...options.headers,
+                            Authorization: `${tokenType} ${token}`,
+                        },
+                    });
+                };
+
+                try {
+                    const token = await this.getValidAccessToken();
+                    const response = await makeRequest(token, "Bearer");
+
+                    if (response.status === 401) {
+                        // console.log('Got 401, attempting token refresh...');
+                        await this.refreshAccessToken();
+                        const newToken = this.getTokens();
+                        return makeRequest(
+                            newToken.accessToken,
+                            newToken.tokenType,
+                        );
+                    }
+
+                    return response;
+                } catch (error) {
+                    if (
+                        error.message.includes("Session expired") ||
+                        error.message.includes("No valid access token")
+                    ) {
+                        onAuthRequired();
+                    }
+                    throw error;
+                }
+            }
+
+            decodeToken(token) {
+                try {
+                    const base64Url = token.split(".")[1];
+                    const base64 = base64Url
+                        .replace(/-/g, "+")
+                        .replace(/_/g, "/");
+                    const jsonPayload = decodeURIComponent(
+                        atob(base64)
+                            .split("")
+                            .map((c) => {
+                                return (
+                                    "%" +
+                                    ("00" + c.charCodeAt(0).toString(16)).slice(
+                                        -2,
+                                    )
+                                );
+                            })
+                            .join(""),
+                    );
+                    return JSON.parse(jsonPayload);
+                } catch (e) {
+                    // console.error('[PDC-OAuth] Failed to decode token:', e);
+                    return null;
+                }
+            }
+
+            getUserInfo() {
+                const tokens = this.getTokens();
+                if (!tokens || !tokens.idToken) return null;
+                return this.decodeToken(tokens.idToken);
+            }
+        }
+        window.OAuthClient = OAuthClient;
+    }
+</script>

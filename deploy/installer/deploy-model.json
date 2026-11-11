@@ -1,0 +1,73 @@
+{
+  "_comment": "What the deploy model itself consists of. PDC Bootstrap Deploy Model reads this from the repo and creates/updates each piece on whatever model type it runs on (model.class), so the model's name doesn't matter.",
+
+  "attributes": [
+    { "name": "repo_url",          "description": "Repo URL",          "attribute_type": "string" },
+    { "name": "repo_ref",          "description": "Repo Ref",          "attribute_type": "string" },
+    { "name": "installer_commit",  "description": "Installer Commit",  "attribute_type": "string" },
+    { "name": "installer_role",    "description": "Installer Role",    "attribute_type": "multi_value", "multi_allowed": true },
+    { "name": "pdc_event_role",    "description": "PDC Event Role",    "attribute_type": "multi_value", "multi_allowed": true },
+    { "name": "pdc_grantee_profile", "description": "PDC Grantee Profile", "attribute_type": "multi_value", "multi_allowed": true },
+    { "name": "pdc_staff_profile",   "description": "PDC Staff Profile",   "attribute_type": "multi_value", "multi_allowed": true },
+    { "name": "grant_request_themes",          "description": "Grant Request Themes",          "attribute_type": "multi_value", "multi_allowed": true },
+    { "name": "validate_results",  "description": "Validate Results",  "attribute_type": "text" },
+    { "name": "install_results",   "description": "Install Results",   "attribute_type": "text" },
+    { "name": "uninstall_results", "description": "Uninstall Results", "attribute_type": "text" },
+    { "name": "restore_results",   "description": "Restore Results",   "attribute_type": "text" },
+    { "name": "installer_results", "description": "Installer Results", "attribute_type": "text" },
+    { "name": "credentials_results", "description": "Credentials Results", "attribute_type": "text" },
+    { "name": "pdc_environment",   "description": "PDC Environment",   "attribute_type": "multi_value", "multi_allowed": false },
+    { "name": "pdc_client_id_input",     "description": "PDC Client ID",     "attribute_type": "string" },
+    { "name": "pdc_client_secret_input", "description": "PDC Client Secret", "attribute_type": "string" },
+    { "name": "previous_configuration", "description": "Previous Configuration", "attribute_type": "text" },
+    { "name": "current_configuration",  "description": "Current Configuration",  "attribute_type": "text" }
+  ],
+
+  "_snapshot_document_type": "Configuration snapshots are saved as text documents of this type. Must match lib[:snapshot_doc_type_name] in PDC Installer Lib.",
+  "snapshot_document_type": "Snapshot",
+
+  "_retired_attributes": "Fields earlier versions created that are no longer used: the bootstrap soft-deletes them.",
+  "retired_attributes": ["grant_request_readonly_themes"],
+
+  "methods": [
+    { "name": "PDC Bootstrap Deploy Model", "path": "deploy/installer/PDC Bootstrap Deploy Model.rb" },
+    { "name": "PDC Installer Lib",          "path": "deploy/installer/PDC Installer Lib.rb" },
+    { "name": "PDC Validate Install",       "path": "deploy/installer/PDC Validate Install.rb" },
+    { "name": "PDC Install",                "path": "deploy/installer/PDC Install.rb" },
+    { "name": "PDC Uninstall",              "path": "deploy/installer/PDC Uninstall.rb" },
+    { "name": "PDC Restore Previous",       "path": "deploy/installer/PDC Restore Previous.rb" },
+    { "name": "PDC_Discover",               "path": "deploy/installer/PDC_Discover.rb" },
+    { "name": "PDC_Export_Components",      "path": "deploy/installer/PDC_Export_Components.rb" },
+    { "name": "PDC Populate Options",       "path": "deploy/installer/PDC Populate Options.rb" },
+    { "name": "PDC_Results",                "path": "deploy/installer/PDC_Results.rb" },
+    { "name": "PDC_List_Summary",           "path": "deploy/installer/PDC_List_Summary.rb" },
+    { "name": "PDC Keep Deploy Record",     "path": "deploy/installer/PDC Keep Deploy Record.rb", "method_type": "after_destroy" },
+    { "name": "PDC Save Credentials",       "path": "deploy/installer/PDC Save Credentials.rb", "method_type": "before_save" }
+  ],
+
+  "_state_hook_prefix": "Put before the method call in every generated state hook so the record stays in its previous state (same pattern as the existing check_for_updates state).",
+  "state_hook_prefix": "model.state = model.state_was",
+
+  "states": [
+    { "name": "new",             "description": "New",               "state_type": "new" },
+    { "name": "validate",        "description": "Validate",          "state_type": "workflow", "invokes": "PDC Validate Install" },
+    { "name": "install",         "description": "Install",           "state_type": "workflow", "invokes": "PDC Install" },
+    { "name": "uninstall",       "description": "Uninstall",         "state_type": "workflow", "invokes": "PDC Uninstall" },
+    { "name": "restore_previous","description": "Restore Previous",  "state_type": "workflow", "invokes": "PDC Restore Previous" },
+    { "name": "refresh_lists",   "description": "Refresh Lists",     "state_type": "workflow", "invokes": "PDC Populate Options" },
+    { "name": "update_installer","description": "Update Installer",  "state_type": "workflow", "invokes": "PDC Bootstrap Deploy Model" }
+  ],
+
+  "stencil_layout": "deploy/installer/stencil/layout.json",
+
+  "_button_role_field": "The deploy model's buttons get the role chosen in this required field (on the first save, After Create creates them).",
+  "button_role_field": "installer_role",
+  "events": [
+    { "button_name": "Validate",          "to_state": "validate",         "from_states": ["new"] },
+    { "button_name": "Install",           "to_state": "install",          "from_states": ["new"] },
+    { "button_name": "Uninstall",         "to_state": "uninstall",        "from_states": ["new"] },
+    { "button_name": "Restore Previous",  "to_state": "restore_previous", "from_states": ["new"] },
+    { "button_name": "Refresh Lists",     "to_state": "refresh_lists",    "from_states": ["new"] },
+    { "button_name": "Update Installer",  "to_state": "update_installer", "from_states": ["new"] }
+  ]
+}

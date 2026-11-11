@@ -1,0 +1,1 @@
+model.create_new_application_form.present?

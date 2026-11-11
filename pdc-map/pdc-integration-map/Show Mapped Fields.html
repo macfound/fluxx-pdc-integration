@@ -1,0 +1,344 @@
+<br><br><a title="Add a Fields Mapped From Fluxx to PDC" class="to-modal pdc-add-mapping-btn" data-on-success="refreshCaller,close" href="/machine_models/new?_force_set%5Bmachine_model%5Bpdc_mapping_field%5D%5D={{model.id}}&amp;child_model=1&amp;machine_model%5Bpdc_mapping_field%5D={{model.id}}&amp;parent_model_class=MacModelTypeDynPdcApplicationForm1&amp;parent_model_id={{model.id}}&amp;type=MacModelTypeDynPdcMappedField1">Add a Field Mapping From Fluxx to PDC</a><br>
+
+{% assign sorted_fields = model.SortMappedFieldsbyFieldPosition %}
+{% assign mapping_warnings = model.Mapped_Field_Warnings %}
+
+<table class="pdc-mapped-fields">
+  <colgroup>
+    <col class="col-content">
+    <col class="col-actions">
+  </colgroup>
+  <tbody>
+    {% if sorted_fields.size > 0 %}
+      {% for field in sorted_fields %}
+        {% assign is_complete = true %}
+        {% unless field.pdc_field_position and field.fluxx_field and field.pdc_field and field.pdc_application_field_instructions %}
+          {% assign is_complete = false %}
+        {% endunless %}
+        
+        <tr class="field-row">
+          <td class="content-cell">
+            <table class="inner-table">
+              <tr class="main-row">
+                <td class="position">
+                  {% if field.pdc_field_position %}
+                    <strong>{{ field.pdc_field_position }}</strong>
+                  {% else %}
+                    <span class="empty">—</span>
+                  {% endif %}
+                </td>
+                <td class="status">
+                  {% if is_complete %}
+                    <span class="complete">✓</span>
+                  {% else %}
+                    <span class="incomplete">⚠</span>
+                  {% endif %}
+                </td>
+                <td class="instructions-preview">
+                  <div class="instructions-label">Instructions</div>
+                  <div class="instructions-text">
+                    {% if field.pdc_application_field_instructions %}
+                      {% if field.pdc_application_field_instructions.size > 250 %}
+                        {{ field.pdc_application_field_instructions | truncate: 250, "..." }}
+                      {% else %}
+                        {{ field.pdc_application_field_instructions }}
+                      {% endif %}
+                    {% else %}
+                      <em>No instructions provided</em>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              <tr class="detail-row">
+                <td colspan="3">
+                  <div class="field-details">
+                    <div class="field-item">
+                      <span class="field-label">Fluxx Field:</span>
+                      {% if field.fluxx_field %}
+                        <span class="field-value">{{ field.fluxx_field }}</span>
+                      {% else %}
+                        <span class="field-value empty">Not mapped</span>
+                      {% endif %}
+                    </div>
+                    <div class="field-item">
+                      <span class="field-label">PDC Field:</span>
+                      {% if field.pdc_field %}
+                        <span class="field-value">{{ field.pdc_field }}</span>
+                      {% else %}
+                        <span class="field-value empty">Not set</span>
+                      {% endif %}
+                    </div>
+                    {% assign warning_key = field.id | append: '' %}
+                    {% assign field_warning = mapping_warnings[warning_key] %}
+                    {% if field_warning %}<div class="field-warning">&#9888; {{ field_warning | escape }}</div>{% endif %}
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td class="actions">
+            <a href="/machine_models/{{ field.id }}" 
+               class="new-detail action-btn view"
+               title="View" 
+               data-insert="after">View</a>
+            <a href="/machine_models/{{ field.id }}/edit"
+               class="action-btn edit to-modal"
+               title="Edit" 
+               data-on-success="refreshCaller,close">Edit</a>
+            <a href="/machine_models/{{ field.id }}"
+               class="action-btn delete as-delete"
+               title="Delete" 
+               data-on-success="refreshCaller">Del</a>
+          </td>
+        </tr>
+      {% endfor %}
+    {% else %}
+      <tr>
+        <td class="no-data" colspan="2">No mapped fields found</td>
+      </tr>
+    {% endif %}
+  </tbody>
+</table>
+
+<style>
+  /* Outer table */
+  .pdc-mapped-fields {
+    width: 100%;
+    max-width: 493px;
+    border-collapse: collapse;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    table-layout: fixed;
+  }
+  
+  /* Column definitions */
+  .pdc-mapped-fields .col-content {
+    width: calc(100% - 50px);
+  }
+  
+  .pdc-mapped-fields .col-actions {
+    width: 50px;
+  }
+  
+  /* Outer table cells */
+  .pdc-mapped-fields .field-row {
+    border-top: 2px solid #d0d0d0;
+    border-bottom: 2px solid #d0d0d0;
+  }
+  
+  .pdc-mapped-fields .content-cell {
+    vertical-align: top;
+    padding-top: 12px;
+  }
+  
+  /* Inner table */
+  .pdc-mapped-fields .inner-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  /* Main row styling */
+  .pdc-mapped-fields .main-row {
+    background: #f0f4f8;
+  }
+  
+  .pdc-mapped-fields .main-row td {
+    padding-right: 6px;
+    padding-left: 6px;
+    vertical-align: top;
+    padding-top: 8px;
+    margin-top: 8px;
+  }
+  
+  /* Position column */
+  .pdc-mapped-fields .position {
+    width: 30px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #2c3e50;
+  }
+  
+  .pdc-mapped-fields .position .empty {
+    color: #ccc;
+    font-weight: normal;
+  }
+  
+  /* Status column */
+  .pdc-mapped-fields .status {
+    width: 30px;
+    text-align: center;
+    font-size: 16px;
+  }
+  
+  .pdc-mapped-fields .status .complete {
+    color: #28a745;
+  }
+  
+  .pdc-mapped-fields .status .incomplete {
+    color: #ffc107;
+  }
+  
+  /* Instructions column */
+  .pdc-mapped-fields .instructions-preview {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  
+  .pdc-mapped-fields .instructions-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 2px;
+    font-weight: 600;
+  }
+  
+  .pdc-mapped-fields .instructions-text {
+    font-size: 12px;
+    color: #495057;
+    line-height: 1.3;
+    word-wrap: break-word;
+  }
+  
+  .pdc-mapped-fields .instructions-text em {
+    color: #999;
+    font-style: italic;
+  }
+  
+  /* Detail row styling */
+  .pdc-mapped-fields .detail-row {
+    background: white;
+  }
+  
+  .pdc-mapped-fields .field-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  .pdc-mapped-fields .field-item {
+    display: flex;
+    align-items: baseline;
+  }
+  
+  .pdc-mapped-fields .field-label {
+    font-weight: 600;
+    color: #495057;
+    margin-right: 6px;
+    font-size: 11px;
+    min-width: 70px;
+  }
+  
+  .pdc-mapped-fields .field-value {
+    color: #212529;
+    font-size: 12px;
+    word-break: break-word;
+  }
+  
+  .pdc-mapped-fields .field-warning {
+    margin-top: 6px;
+    padding: 6px 8px;
+    background: #fff8e1;
+    border-left: 3px solid #f0ad4e;
+    color: #6d4c00;
+    font-size: 12px;
+  }
+
+  .pdc-mapped-fields .field-value.empty {
+    color: #999;
+    font-style: italic;
+  }
+  
+  /* Actions column */
+  .pdc-mapped-fields .actions {
+    padding-left: 2px;
+    padding-right: 2px;
+    vertical-align: top;
+    border-left: 1px solid #d0d0d0;
+  }
+  
+  .pdc-mapped-fields .action-btn {
+    display: block;
+    padding: 3px 4px;
+    margin-bottom: 2px;
+    border-radius: 2px;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    transition: opacity 0.2s;
+  }
+  
+  .pdc-mapped-fields .action-btn:first-child {
+    margin-top: 8px; /* Match the padding of main-row td */
+  }
+  
+  .pdc-mapped-fields .action-btn.view {
+    background: #17a2b8;
+    color: white;
+  }
+  
+  .pdc-mapped-fields .action-btn.edit {
+    background: #6c757d;
+    color: white;
+  }
+  
+  .pdc-mapped-fields .action-btn.delete {
+    background: #dc3545;
+    color: white;
+  }
+  
+  .pdc-mapped-fields .action-btn:hover {
+    opacity: 0.8;
+  }
+  
+  /* No data styling */
+  .pdc-mapped-fields .no-data {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 14px;
+  }
+
+  a.pdc-add-mapping-btn,
+  a.pdc-add-mapping-btn:link,
+  a.pdc-add-mapping-btn:visited,
+  a.pdc-add-mapping-btn:hover,
+  a.pdc-add-mapping-btn:focus
+  .pdc-add-mapping-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    background: #28a745;
+    color: white !important;
+    text-align: center;
+    text-decoration: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+  
+  .pdc-add-mapping-btn:hover {
+    background: #218838;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    color: white;
+    text-decoration: none;
+  }
+  
+  .pdc-add-mapping-btn:active {
+    background: #1e7e34;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .pdc-add-mapping-btn::before {
+    content: "+ ";
+    font-weight: bold;
+  }
+
+</style>

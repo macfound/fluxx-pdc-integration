@@ -1,0 +1,1648 @@
+<script>
+    // PDC:ELEMENT id=floating-panel
+    window._pdcInitBehavior = function () {
+        "use strict";
+        if (window._pdcBehaviorInitialized) return;
+        if (!window.isInGranteePortal) return;
+        if (!window._pdcStructureReady) {
+            // console.warn('[PDC] Structure not ready. File 4 may not have loaded.');
+            return;
+        }
+        window._pdcBehaviorInitialized = true;
+
+        // ── Field mapping cache ──────────────────────────────────
+        // Decoded once from the Liquid-rendered Base64 blob in
+        // file 4's stencil. Null until loadFieldMappings() succeeds.
+        var fieldMappings = null;
+
+        /**
+         * Reads the Base64-encoded mapping JSON from the stencil
+         * element. Returns the parsed mappings array, or null if
+         * the element is missing or the data is malformed.
+         *
+         * Caches the result: safe to call repeatedly.
+         */
+        function loadFieldMappings() {
+            if (fieldMappings) return fieldMappings;
+
+            var el = $("pdc-field-mappings");
+            if (!el) {
+                // console.warn('[PDC] Field mapping element not found');
+                return null;
+            }
+
+            var raw = el.getAttribute("data-field-mappings");
+            if (!raw) {
+                // console.warn('[PDC] data-field-mappings attribute is empty');
+                return null;
+            }
+
+            try {
+                var decoded = JSON.parse(atob(raw));
+                if (decoded.version !== 1) {
+                    // console.warn('[PDC] Unknown mapping version:', decoded.version);
+                    return null;
+                }
+                fieldMappings = decoded;
+                // console.log('[PDC] Loaded', decoded.mappings.length, 'field mappings');
+                return fieldMappings;
+            } catch (e) {
+                // console.error('[PDC] Failed to decode field mappings:', e);
+                return null;
+            }
+        }
+
+        /**
+         * Counts how many PDC field values from a version can be
+         * mapped to Fluxx fields on the current card.
+         *
+         * A field "matches" when all three conditions hold:
+         *   1. A mapping exists with a non-null fluxx_field_key
+         *   2. The PDC field value is non-empty
+         *   3. A Fluxx form field with that name exists on the card
+         *
+         * Returns { total: N, matches: [...] } where each match is
+         * { mapping, fieldValue, fluxxField }.
+         */
+        function computeMatches(fieldValues) {
+            var mappingData = loadFieldMappings();
+            if (!mappingData || !mappingData.mappings)
+                return { total: 0, matches: [] };
+
+            // Build a lookup: pdc_field_short_code -> mapping
+            var byShortCode = {};
+            for (var i = 0; i < mappingData.mappings.length; i++) {
+                var m = mappingData.mappings[i];
+                if (m.fluxx_field_key) {
+                    byShortCode[m.pdc_field_short_code] = m;
+                }
+            }
+
+            // ── DEBUG: trace match attempts ──
+            // console.group('[PDC DEBUG] computeMatches');
+            // console.log('Mapping lookup keys:', Object.keys(byShortCode));
+            // ── END DEBUG ──
+
+            var matches = [];
+            for (var j = 0; j < fieldValues.length; j++) {
+                var fv = fieldValues[j];
+                var value = fv.value || "";
+                if (!value) continue;
+
+                // Extract the short code from the PDC field value
+                var shortCode =
+                    fv.applicationFormField &&
+                    fv.applicationFormField.baseField &&
+                    fv.applicationFormField.baseField.shortCode;
+
+                // ── DEBUG: log each extraction attempt ──
+                if (j < 5) {
+                    // console.log('fieldValue[' + j + ']:', {
+                    //   hasAppFormField: !!fv.applicationFormField,
+                    //   appFormFieldKeys: fv.applicationFormField ? Object.keys(fv.applicationFormField) : 'N/A',
+                    //   extractedShortCode: shortCode,
+                    //   value: value.substring(0, 60)
+                    // });
+                }
+                // ── END DEBUG ──
+
+                if (!shortCode) continue;
+
+                var mapping = byShortCode[shortCode];
+                if (!mapping) continue;
+
+                // Look up the Fluxx field. The mapping's fluxx_field_key may use
+                // dot notation (e.g. "grant_request.organization_name") but Fluxx
+                // form fields use bracket notation in their name attributes
+                // (e.g. "grant_request[organization_name]").
+                //
+                // Strategy:
+                //   1. Try the raw key as a partial match (handles both formats)
+                //   2. If that fails and the key contains a dot, extract the
+                //      field name portion after the last dot and try that
+                //   3. If the key contains a dot, also try converting to
+                //      bracket notation and doing an exact-ish match
+                var fluxxField = null;
+                var key = mapping.fluxx_field_key;
+
+                if (window.fluxxFieldUtils) {
+                    // Try 1: raw key as partial match
+                    fluxxField = fluxxFieldUtils.findByName(key, false);
+
+                    // Try 2: extract field name after last dot
+                    if (!fluxxField && key.indexOf(".") !== -1) {
+                        var fieldNamePart = key.substring(
+                            key.lastIndexOf(".") + 1,
+                        );
+                        fluxxField = fluxxFieldUtils.findByName(
+                            fieldNamePart,
+                            false,
+                        );
+                    }
+
+                    // Try 3: convert dot to bracket notation
+                    if (!fluxxField && key.indexOf(".") !== -1) {
+                        var bracketKey = key.replace(/\.([^.]+)/g, "[$1]");
+                        fluxxField = fluxxFieldUtils.findByName(
+                            bracketKey,
+                            false,
+                        );
+                    }
+                }
+
+                // ── DEBUG: log lookup attempts for first few fields ──
+                if (j < 5) {
+                    // console.log('Fluxx lookup for "' + key + '":', fluxxField ? 'FOUND (' + fluxxField.name + ')' : 'NOT FOUND');
+                    if (
+                        !fluxxField &&
+                        window.fluxxFields &&
+                        window.fluxxFields.length > 0
+                    ) {
+                        // console.log('  Sample Fluxx field names:', window.fluxxFields.slice(0, 3).map(function(f) { return f.name; }));
+                    }
+                }
+                // ── END DEBUG ──
+
+                if (!fluxxField) continue;
+
+                matches.push({
+                    mapping: mapping,
+                    fieldValue: fv,
+                    fluxxField: fluxxField,
+                    value: value,
+                });
+            }
+
+            // ── DEBUG ──
+            // console.log('Total matches:', matches.length, 'out of', fieldValues.length, 'field values');
+            // console.groupEnd();
+            // ── END DEBUG ──
+
+            return { total: matches.length, matches: matches };
+        }
+
+        /**
+         * Populates all matched Fluxx fields with PDC values.
+         *
+         * For select fields, the PDC value must match one of the
+         * option values exactly; otherwise the field is skipped and
+         * logged to the // console.
+         *
+         * Returns { populated: N, skipped: N, errors: [...] }
+         */
+        function autoPopulateFields(matches) {
+            var populated = 0;
+            var skipped = 0;
+            var errors = [];
+
+            for (var i = 0; i < matches.length; i++) {
+                var m = matches[i];
+                var field = m.fluxxField;
+                var value = m.value;
+
+                // For select fields, verify the value is a valid option
+                if (field.type === "select" && field.options) {
+                    var validOption = false;
+                    for (var k = 0; k < field.options.length; k++) {
+                        if (
+                            field.options[k].value === value ||
+                            field.options[k].text === value
+                        ) {
+                            // Use the option value (not text) for setting
+                            value = field.options[k].value;
+                            validOption = true;
+                            break;
+                        }
+                    }
+                    if (!validOption) {
+                        skipped++;
+                        errors.push(
+                            'Select "' +
+                                (m.mapping.fluxx_field_label ||
+                                    m.mapping.fluxx_field_key) +
+                                '": no matching option for "' +
+                                value.substring(0, 50) +
+                                '"',
+                        );
+                        // console.warn('[PDC] Skipped select field, no matching option:',
+                        // m.mapping.fluxx_field_key, 'value:', value);
+                        continue;
+                    }
+                }
+
+                try {
+                    fluxxFieldUtils.setValue(field, value);
+                    populated++;
+                } catch (e) {
+                    skipped++;
+                    errors.push(
+                        'Failed to set "' +
+                            (m.mapping.fluxx_field_label ||
+                                m.mapping.fluxx_field_key) +
+                            '": ' +
+                            e.message,
+                    );
+                    // console.error('[PDC] Failed to set field:', m.mapping.fluxx_field_key, e);
+                }
+            }
+
+            return { populated: populated, skipped: skipped, errors: errors };
+        }
+
+        // ── Active card detection ────────────────────────────────
+        // Mirrors the logic in fluxxCardAPI (file 2). Finds the
+        // visible card among potentially many with detail-open.
+        // Returns null when no card is active.
+        function getVisibleCard() {
+            var candidates = document.querySelectorAll(
+                "li.card.detail-open.listing-card:not(.detail-only)",
+            );
+            for (var i = 0; i < candidates.length; i++) {
+                if (window.getComputedStyle(candidates[i]).display !== "none") {
+                    return candidates[i];
+                }
+            }
+            return null;
+        }
+
+        // ── Scoped element resolution ────────────────────────────
+        // Fluxx injects a fresh stencil copy into every card that
+        // loads. Over a session with 50+ cards, that means 50+
+        // copies of each data-original-id in the DOM.
+        //
+        // Strategy:
+        //   1. Look inside the currently visible card first.
+        //   2. Fall back to document.body for elements that have
+        //      been reparented (the floating panel).
+        //   3. Return null if nothing matches.
+        //
+        // This avoids iterating all copies and always returns the
+        // element the user is actually looking at.
+        function $(id) {
+            // Primary: resolve by data-original-id, which Fluxx stamps on a
+            // fully-processed card (authored id "x" -> id "x-36" + a
+            // data-original-id "x").
+            var selector = '[data-original-id="' + id + '"]';
+
+            // Fallback: after a partial "refreshCaller" refresh (e.g. saving the
+            // consent modal), Fluxx re-injects the RAW stencil and does NOT
+            // re-stamp data-original-id — elements keep only their authored id
+            // ("x", or a suffixed "x-36"). Without this fallback, $() returns
+            // null post-refresh and the gate can't toggle the login controls.
+            var idSelector = '[id="' + id + '"],[id^="' + id + '-"]';
+
+            // Try the active card first.
+            var card = getVisibleCard();
+            if (card) {
+                var scoped =
+                    card.querySelector(selector) ||
+                    card.querySelector(idSelector);
+                if (scoped) return scoped;
+            }
+
+            // Fall back to body-level (reparented panel, or no active card).
+            return (
+                document.body.querySelector(selector) ||
+                document.body.querySelector(idSelector) ||
+                null
+            );
+        }
+
+        // ── Locale-aware date/time formatter ─────────────────────
+        var dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+        });
+
+        function formatDate(dateStr) {
+            if (!dateStr) return "";
+            try {
+                var d = new Date(dateStr);
+                if (isNaN(d.getTime())) return "";
+                return dateTimeFormatter.format(d);
+            } catch (e) {
+                return "";
+            }
+        }
+
+        function announce(message) {
+            var region = $("pdc-status");
+            if (!region) return;
+            region.textContent = "";
+            setTimeout(function () {
+                region.textContent = message;
+            }, 50);
+        }
+
+        function getFocusableElements(container) {
+            var selector = [
+                "a[href]",
+                "button:not([disabled])",
+                "input:not([disabled])",
+                "select:not([disabled])",
+                "textarea:not([disabled])",
+                '[tabindex="0"]',
+                '[role="button"]:not([disabled])',
+            ].join(", ");
+            return Array.prototype.slice
+                .call(container.querySelectorAll(selector))
+                .filter(function (el) {
+                    if (el.offsetParent !== null) return true;
+                    var style = window.getComputedStyle(el);
+                    return (
+                        style.display !== "none" &&
+                        style.visibility !== "hidden"
+                    );
+                });
+        }
+
+        // ── Focus trap ───────────────────────────────────────────
+        function trapFocus(container) {
+            var trapActive = true;
+
+            function handler(e) {
+                if (e.key !== "Tab") return;
+                if (!trapActive) return;
+
+                var focusable = getFocusableElements(container);
+                var activeEl = document.activeElement;
+
+                if (focusable.length === 0) return;
+
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                var first = focusable[0];
+                var last = focusable[focusable.length - 1];
+
+                if (!container.contains(activeEl)) {
+                    var target = e.shiftKey ? last : first;
+                    target.focus();
+                    return;
+                }
+
+                var currentIndex = focusable.indexOf(activeEl);
+
+                if (currentIndex === -1) {
+                    first.focus();
+                    return;
+                }
+
+                var nextIndex;
+                if (e.shiftKey) {
+                    nextIndex =
+                        currentIndex <= 0
+                            ? focusable.length - 1
+                            : currentIndex - 1;
+                } else {
+                    nextIndex =
+                        currentIndex >= focusable.length - 1
+                            ? 0
+                            : currentIndex + 1;
+                }
+
+                focusable[nextIndex].focus();
+            }
+
+            document.addEventListener("keydown", handler, true);
+            return function () {
+                trapActive = false;
+                document.removeEventListener("keydown", handler, true);
+            };
+        }
+
+        var releaseFocusTrap = null;
+        var previousFocus = null;
+
+        // ── The open panel ───────────────────────────────────────
+        // Every card has its own copy of the panel. The one opened is
+        // moved to document.body, outside every card, where $() would
+        // find the first copy in the page: with several cards open, a
+        // hidden one in another card. So the open panel is kept here,
+        // and its parts are found inside it.
+        var activePanel = null;
+
+        function panelPart(root, id) {
+            return root
+                ? root.querySelector(
+                      '[data-original-id="' +
+                          id +
+                          '"],[id="' +
+                          id +
+                          '"],[id^="' +
+                          id +
+                          '-"]',
+                  )
+                : null;
+        }
+
+        function currentPanel() {
+            return activePanel && document.body.contains(activePanel)
+                ? activePanel
+                : $("pdcProposalsPanel");
+        }
+
+        // The visible card's own panel, or the one already open
+        function panelToOpen() {
+            var card = getVisibleCard();
+            return (
+                (card && panelPart(card, "pdcProposalsPanel")) ||
+                currentPanel()
+            );
+        }
+
+        function openPanel(panel) {
+            panel = panel || panelToOpen();
+            if (!panel) return;
+
+            if (panel.parentElement !== document.body) {
+                document.body.appendChild(panel);
+            }
+            activePanel = panel;
+
+            previousFocus = document.activeElement;
+            panel.classList.remove("hidden");
+
+            if (!panel.hasAttribute("tabindex")) {
+                panel.setAttribute("tabindex", "-1");
+            }
+
+            releaseFocusTrap = trapFocus(panel);
+
+            var target =
+                panelPart(panel, "searchInput") || panelPart(panel, "closeBtn");
+            requestAnimationFrame(function () {
+                if (target) {
+                    target.focus();
+                } else {
+                    panel.focus({ preventScroll: true });
+                }
+            });
+
+            announce("PDC Data Explorer panel opened");
+        }
+
+        function closePanel() {
+            var panel = currentPanel();
+            if (!panel) return;
+            panel.classList.add("hidden");
+            if (releaseFocusTrap) {
+                releaseFocusTrap();
+                releaseFocusTrap = null;
+            }
+            if (previousFocus && previousFocus.focus) previousFocus.focus();
+            announce("Proposal Explorer panel closed");
+        }
+
+        var oauth = new OAuthClient();
+
+        // ── Auth UI ──────────────────────────────────────────────
+        // Updates the stencil copy inside the currently visible card.
+        // Other cards' copies stay stale until the user switches to
+        // them, at which point their stencil becomes the one $()
+        // resolves. We call updateAuthUI on every delegated button
+        // action, so the visible card's UI is always current.
+        function updateAuthUI() {
+            var loginContainer = $("pdc-login-container");
+            var authContainer = $("pdc-authenticated-container");
+            // Launch button lives in journey step 4, OUTSIDE
+            // #pdc-session-controls, so it is driven by auth state alone.
+            var launchContainer = $("pdc-launch-container");
+            var userNameEl = $("pdc-user-name");
+            var userEmailEl = $("pdc-user-email");
+
+            var isAuth = oauth.isAuthenticated();
+            // console.log('[PDC] Auth state:', isAuth);
+            if (loginContainer)
+                loginContainer.classList.toggle("hidden", isAuth);
+            if (authContainer)
+                authContainer.classList.toggle("hidden", !isAuth);
+            if (launchContainer)
+                launchContainer.classList.toggle("hidden", !isAuth);
+            if (isAuth) {
+                var info = oauth.getUserInfo();
+                if (userNameEl && info) {
+                    userNameEl.textContent =
+                        info.name || info.preferred_username || "User";
+                }
+                if (userEmailEl) {
+                    var email = (info && info.email) || "";
+                    userEmailEl.textContent = email;
+                    userEmailEl.style.display = email ? "block" : "none";
+                }
+                announce(
+                    "Connected to PDC as " + ((info && info.name) || "User"),
+                );
+            } else {
+                announce("Disconnected from PDC");
+            }
+        }
+
+        // ── PDC account gate ─────────────────────────────────────
+        // Visibility of the session controls (login / connected /
+        // launch / logout) is driven by the native dropdown
+        //   grant_request[pdc_account_exists]   Yes = "1", No = "0"
+        // The <li> and <select> share the same data-original-id, so we
+        // target the <select> specifically to read its value. Default No
+        // keeps the controls hidden so newcomers are not sent to a login
+        // that returns nothing. A native group cannot inject into our
+        // journey list, so JS owns this toggle.
+        //
+        // We read the NATIVE field directly and do NOT author our own
+        // <select> in the stencil: Fluxx's stencil sanitizer strips a
+        // text block that embeds a rogue form control, which blanked the
+        // whole journey (the regression this restore fixes).
+        // Show/hide is driven by the PROXY value (kept equal to native). Fall
+        // back to the native field if the proxy is not present yet.
+        function userHasPdcAccount() {
+            var proxy = getAccountProxy();
+            if (proxy && proxy.value !== "") return proxy.value === "1";
+            var native = getNativeAccountField();
+            return !!native && native.value === "1";
+        }
+
+        // ── Account gate: proxy <-> native sync ─────────────────────
+        // The grantee answers a PROXY <select id="pdc-account-proxy"> authored
+        // in journey Step 3 (file 4). The NATIVE Fluxx field
+        //   grant_request[pdc_account_exists]
+        // stays hidden in its own Fluxx slot (file 1). We do NOT move the
+        // native field: moving it puts its only copy in the journey slot, which
+        // Fluxx's "refreshCaller" partial refresh destroys. Instead the proxy
+        // lives in the journey stencil so it re-renders INTACT on refresh, and
+        // we:
+        //   - SEED the proxy from the native saved value (native = source of
+        //     truth) on load and after each refresh, and
+        //   - on proxy change, WRITE the value back into the native <select> +
+        //     fire a native change event, so Fluxx saves it on the normal form
+        //     save.
+        function getNativeAccountField() {
+            var sel =
+                'select[data-original-id="grant_request_pdc_account_exists"],' +
+                'select[name="grant_request[pdc_account_exists]"]';
+            var card = getVisibleCard();
+            if (card) {
+                var scoped = card.querySelector(sel);
+                if (scoped) return scoped;
+            }
+            return document.body.querySelector(sel);
+        }
+
+        function getAccountProxy() {
+            return $("pdc-account-proxy");
+        }
+
+        // Seed the proxy from the native field's saved value. Native is the
+        // source of truth. Safe to call repeatedly (e.g. after a refresh, when
+        // the proxy re-renders blank and must be re-seeded).
+        function syncAccountProxy() {
+            var proxy = getAccountProxy();
+            var native = getNativeAccountField();
+            if (!proxy || !native) return;
+            if (proxy.value !== native.value) proxy.value = native.value;
+        }
+
+        // Write the proxy answer into the native field so Fluxx saves it on the
+        // normal whole-form save. Plain DOM value set + a native change event
+        // (in case Fluxx form-dirty tracking listens).
+        function writeAccountAnswerToNative() {
+            var proxy = getAccountProxy();
+            var native = getNativeAccountField();
+            if (!proxy || !native) return;
+            if (native.value !== proxy.value) {
+                native.value = proxy.value;
+                try {
+                    native.dispatchEvent(
+                        new Event("change", { bubbles: true }),
+                    );
+                } catch (e) {
+                    var evt = document.createEvent("HTMLEvents");
+                    evt.initEvent("change", true, false);
+                    native.dispatchEvent(evt);
+                }
+            }
+        }
+
+        // Seed the proxy, then show or hide the session controls under journey
+        // step 3, then sync the inner login/authenticated state.
+        function syncSessionControls() {
+            syncAccountProxy();
+            var controls = $("pdc-session-controls");
+            var step = $("pdc-step-login");
+            var show = userHasPdcAccount();
+            if (controls) controls.classList.toggle("hidden", !show);
+            if (step) step.classList.toggle("pdc-step--active", show);
+            if (show) updateAuthUI();
+        }
+
+        // ── Stale card sync ──────────────────────────────────────
+        // When Fluxx shows a different card, that card's stencil
+        // still reflects whatever state it had when first injected.
+        // This observer watches for detail-open class changes and
+        // syncs the newly visible card's auth UI to current state.
+        // Cost: one querySelector + two classList toggles per card
+        // switch. No iteration over all 50+ copies.
+        var cardListObserver = new MutationObserver(function (mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+                var mutation = mutations[i];
+                if (mutation.type !== "attributes") continue;
+                if (mutation.attributeName !== "class") continue;
+                var target = mutation.target;
+                // Only care about card elements that just became visible
+                if (!target.classList.contains("detail-open")) continue;
+                if (!target.matches("li.card.listing-card:not(.detail-only)"))
+                    continue;
+                if (window.getComputedStyle(target).display === "none")
+                    continue;
+                // This card just became active: sync gate + auth UI
+                syncSessionControls();
+            }
+        });
+
+        // Observe the card table area for class changes on cards.
+        // Use the broadest stable ancestor that contains all cards.
+        var cardTable = document.querySelector(".card-table, .cards, #cards");
+        if (cardTable) {
+            cardListObserver.observe(cardTable, {
+                attributes: true,
+                attributeFilter: ["class"],
+                subtree: true,
+            });
+        }
+
+        // ── Re-seed the proxy after a Fluxx partial refresh ──────
+        // Fluxx's "refreshCaller" refresh (e.g. saving the consent modal)
+        // re-renders our journey stencil from source: the proxy <select> comes
+        // back INTACT but BLANK, so it must be re-seeded from the saved native
+        // value, and the gate re-applied. Nothing fires a Fluxx event for this,
+        // so we watch the card container for added nodes and, when our stencil
+        // (pdc-auth-container) / the proxy / the native field re-appears, re-run
+        // syncSessionControls() (which re-seeds via syncAccountProxy). Debounced
+        // so a burst of refresh mutations collapses into one pass; filtered to
+        // nodes that actually touch our markup so it stays cheap.
+        var refreshResyncTimer = null;
+        function scheduleRefreshResync() {
+            if (refreshResyncTimer) return;
+            refreshResyncTimer = setTimeout(function () {
+                refreshResyncTimer = null;
+                syncSessionControls();
+            }, 80);
+        }
+
+        function nodeTouchesPdc(node) {
+            if (!node || node.nodeType !== 1) return false; // elements only
+            var sel =
+                '[data-original-id="pdc-auth-container"],[id="pdc-auth-container"],[id^="pdc-auth-container-"],' +
+                '[data-original-id="pdc-account-proxy"],[id="pdc-account-proxy"],[id^="pdc-account-proxy-"],' +
+                'select[data-original-id="grant_request_pdc_account_exists"],' +
+                'select[name="grant_request[pdc_account_exists]"]';
+            if (node.matches && node.matches(sel)) return true;
+            if (node.querySelector && node.querySelector(sel)) return true;
+            return false;
+        }
+
+        var refreshObserver = new MutationObserver(function (mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+                var added = mutations[i].addedNodes;
+                for (var j = 0; j < added.length; j++) {
+                    if (nodeTouchesPdc(added[j])) {
+                        scheduleRefreshResync();
+                        return;
+                    }
+                }
+            }
+        });
+
+        var refreshRoot = cardTable || document.body;
+        refreshObserver.observe(refreshRoot, {
+            childList: true,
+            subtree: true,
+        });
+
+        var FIELDS_PER_PAGE = 50;
+
+        // ── PDC environment and proposal paging ──────────────────
+        // The PDC this instance talks to comes with the field mapping
+        // (Get PDC Base URL on the Integration Map, set by the deploy
+        // record's PDC Environment). Only the PDC's own API hosts are
+        // accepted, since the request carries the grantee's token.
+        var PDC_API_DEFAULT = "https://api.philanthropydatacommons.org";
+        var PDC_API_PATTERN =
+            /^https:\/\/api(\.sandbox)?\.philanthropydatacommons\.org$/;
+        var PROPOSALS_PER_PAGE = 25;
+
+        function pdcApiBase() {
+            var mappingData = loadFieldMappings();
+            var url =
+                mappingData && typeof mappingData.pdc_base_url === "string"
+                    ? mappingData.pdc_base_url.replace(/\/+$/, "")
+                    : "";
+            return PDC_API_PATTERN.test(url) ? url : PDC_API_DEFAULT;
+        }
+
+        // The PDC lists proposals newest first; page is the last page
+        // loaded, seen the proposal ids shown (a proposal created while
+        // paging shifts later pages by one).
+        var proposalPaging = { page: 0, total: 0, seen: {}, loading: false };
+
+        function fetchProposalPage(page) {
+            proposalPaging.loading = true;
+            return oauth
+                .authenticatedFetch(
+                    pdcApiBase() +
+                        "/proposals?_page=" +
+                        page +
+                        "&_count=" +
+                        PROPOSALS_PER_PAGE,
+                    {
+                        method: "GET",
+                        headers: { "Content-Type": "application/json" },
+                    },
+                )
+                .then(function (response) {
+                    if (!response.ok)
+                        throw new Error(
+                            "Failed to load proposals: " + response.status,
+                        );
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (page === 1) proposalPaging.seen = {};
+                    proposalPaging.page = page;
+                    proposalPaging.total = Number(data.total) || 0;
+                    return data;
+                })
+                .finally(function () {
+                    proposalPaging.loading = false;
+                });
+        }
+
+        function shownProposalCount() {
+            return Object.keys(proposalPaging.seen).length;
+        }
+
+        // The "Load more" row at the end of the list, while the PDC has
+        // proposals not shown yet.
+        function updateLoadMore(container) {
+            var old = container.querySelector(".pdc-load-more");
+            if (old) old.parentNode.removeChild(old);
+            var shown = shownProposalCount();
+            if (
+                shown >= proposalPaging.total ||
+                proposalPaging.page * PROPOSALS_PER_PAGE >= proposalPaging.total
+            )
+                return;
+            var row = document.createElement("div");
+            row.className = "pdc-load-more";
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "pdc-button pdc-load-more-btn";
+            btn.textContent =
+                "Load more proposals (" +
+                shown +
+                " of " +
+                proposalPaging.total +
+                " shown)";
+            btn.addEventListener("click", function () {
+                if (proposalPaging.loading) return;
+                btn.disabled = true;
+                btn.textContent = "Loading...";
+                announce("Loading more proposals...");
+                fetchProposalPage(proposalPaging.page + 1)
+                    .then(function (data) {
+                        renderEntries(data, container, true);
+                    })
+                    .catch(function () {
+                        announce(
+                            "Failed to load more proposals. Please try again.",
+                        );
+                        updateLoadMore(container);
+                    });
+            });
+            row.appendChild(btn);
+            container.appendChild(row);
+        }
+
+        function renderEntries(data, container, append) {
+            if (!append) container.innerHTML = "";
+            var entries = (data.entries || []).filter(function (entry) {
+                if (proposalPaging.seen[entry.id]) return false;
+                proposalPaging.seen[entry.id] = true;
+                return true;
+            });
+            if (!append && entries.length === 0) {
+                container.innerHTML =
+                    '<div class="pdc-no-results" role="status">No entries found</div>';
+                announce("No entries found");
+                return;
+            }
+            announce(
+                (append
+                    ? entries.length + " more proposal entries loaded. "
+                    : "") +
+                    shownProposalCount() +
+                    " of " +
+                    proposalPaging.total +
+                    " proposal entries shown",
+            );
+            entries.forEach(function (entry) {
+                var el = document.createElement("div");
+                el.className = "pdc-entry-item";
+                el.setAttribute("role", "listitem");
+                var title =
+                    (entry.opportunity && entry.opportunity.title) ||
+                    "Untitled Opportunity";
+                var funder =
+                    (entry.opportunity &&
+                        entry.opportunity.funder &&
+                        entry.opportunity.funder.name) ||
+                    "Unknown Funder";
+                var vCount = (entry.versions && entry.versions.length) || 0;
+                var created = formatDate(entry.createdAt);
+                el.dataset.searchText = (title + " " + funder).toLowerCase();
+                var btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "pdc-entry-header";
+                btn.setAttribute("aria-expanded", "false");
+                btn.innerHTML =
+                    '<span class="pdc-entry-toggle" aria-hidden="true">&#9654;</span>' +
+                    '<div class="pdc-entry-info">' +
+                    '<div class="pdc-entry-title">' +
+                    escapeHtml(title) +
+                    "</div>" +
+                    '<div class="pdc-entry-meta">' +
+                    "<span>Funder: " +
+                    escapeHtml(funder) +
+                    "</span>" +
+                    "<span>Versions: " +
+                    vCount +
+                    "</span>" +
+                    (created ? "<span>Created: " + created + "</span>" : "") +
+                    "</div>" +
+                    "</div>" +
+                    '<span class="pdc-entry-id" aria-hidden="true">#' +
+                    entry.id +
+                    "</span>";
+                var content = document.createElement("div");
+                content.className = "pdc-entry-content";
+                content.setAttribute("role", "region");
+                content.setAttribute("aria-label", title + " versions");
+                btn.addEventListener("click", function () {
+                    var expanded = el.classList.toggle("expanded");
+                    btn.setAttribute("aria-expanded", String(expanded));
+                    if (expanded && !content.dataset.loaded) {
+                        renderVersions(content, entry.versions || []);
+                        content.dataset.loaded = "true";
+                    }
+                });
+                btn.addEventListener("keydown", function (e) {
+                    if (
+                        e.key === "Escape" &&
+                        el.classList.contains("expanded")
+                    ) {
+                        el.classList.remove("expanded");
+                        btn.setAttribute("aria-expanded", "false");
+                    }
+                });
+                el.appendChild(btn);
+                el.appendChild(content);
+                container.appendChild(el);
+            });
+            applySearchFilter();
+            updateLoadMore(container);
+        }
+
+        function renderVersions(container, versions) {
+            container.innerHTML = "";
+            if (versions.length === 0) {
+                container.innerHTML =
+                    '<div class="pdc-no-results">No versions available</div>';
+                return;
+            }
+            versions.forEach(function (version, idx) {
+                var versionEl = document.createElement("div");
+                versionEl.className = "pdc-version-section";
+                var sourceLabel =
+                    (version.source && version.source.label) ||
+                    "Unknown Source";
+                var fieldCount =
+                    (version.fieldValues && version.fieldValues.length) || 0;
+                var versionNum = version.version || idx + 1;
+
+                // Compute match count for this version's field values
+                var matchResult = computeMatches(version.fieldValues || []);
+                var matchCount = matchResult.total;
+
+                var headerBtn = document.createElement("button");
+                headerBtn.type = "button";
+                headerBtn.className = "pdc-version-header";
+                headerBtn.setAttribute("aria-expanded", "false");
+                headerBtn.innerHTML =
+                    '<span class="pdc-version-label">' +
+                    escapeHtml(sourceLabel) +
+                    "</span>" +
+                    '<span class="pdc-version-meta">v' +
+                    versionNum +
+                    " | " +
+                    fieldCount +
+                    " fields" +
+                    (matchCount > 0 ? " | " + matchCount + " mappable" : "") +
+                    "</span>";
+                var content = document.createElement("div");
+                content.className = "pdc-version-content";
+                content.setAttribute("role", "region");
+                content.setAttribute(
+                    "aria-label",
+                    sourceLabel + " version " + versionNum + " fields",
+                );
+
+                // Store version fieldValues on the content element so the
+                // delegation handler can retrieve them at click time.
+                content._pdcFieldValues = version.fieldValues || [];
+
+                headerBtn.addEventListener("click", function () {
+                    var wasExpanded = versionEl.classList.contains("expanded");
+                    versionEl.classList.toggle("expanded");
+                    headerBtn.setAttribute(
+                        "aria-expanded",
+                        String(!wasExpanded),
+                    );
+                    if (!wasExpanded && !content.dataset.loaded) {
+                        // ── DEBUG ──
+                        // console.log('[PDC DEBUG] Version expand:', {
+                        //   matchCount: matchCount,
+                        //   wasExpanded: wasExpanded,
+                        //   dataLoaded: content.dataset.loaded,
+                        //   contentChildren: content.children.length
+                        // });
+                        // ── END DEBUG ──
+
+                        renderFieldValues(content, version.fieldValues || []);
+
+                        // Build auto-populate bar if there are matches.
+                        // Inserted after renderFieldValues because that function
+                        // clears container.innerHTML before appending field items.
+                        if (matchCount > 0) {
+                            // console.log('[PDC DEBUG] Building auto-populate bar for', matchCount, 'matches');
+                            var bar = document.createElement("div");
+                            bar.className = "pdc-auto-populate-bar";
+                            bar.setAttribute("role", "group");
+                            bar.setAttribute(
+                                "aria-label",
+                                "Auto-populate actions",
+                            );
+
+                            var populateBtn = document.createElement("button");
+                            populateBtn.type = "button";
+                            populateBtn.className = "pdc-auto-populate-btn";
+                            populateBtn.setAttribute(
+                                "data-original-id",
+                                "pdc-auto-populate-btn",
+                            );
+                            populateBtn.setAttribute(
+                                "aria-describedby",
+                                "pdc-auto-populate-desc-" + idx,
+                            );
+                            populateBtn.textContent = "Auto-populate";
+
+                            var badge = document.createElement("span");
+                            badge.className = "pdc-match-badge";
+                            badge.setAttribute(
+                                "aria-label",
+                                matchCount +
+                                    " field" +
+                                    (matchCount !== 1 ? "s" : "") +
+                                    " can be populated",
+                            );
+                            badge.innerHTML =
+                                '<span class="pdc-match-count">' +
+                                matchCount +
+                                "</span>" +
+                                "<span>field" +
+                                (matchCount !== 1 ? "s" : "") +
+                                " matched</span>";
+
+                            var desc = document.createElement("span");
+                            desc.id = "pdc-auto-populate-desc-" + idx;
+                            desc.className = "sr-only";
+                            desc.textContent =
+                                "Copies " +
+                                matchCount +
+                                " matched field value" +
+                                (matchCount !== 1 ? "s" : "") +
+                                " from this version into the form";
+
+                            var resultSpan = document.createElement("span");
+                            resultSpan.className = "pdc-populate-result";
+                            resultSpan.setAttribute("role", "status");
+                            resultSpan.setAttribute("aria-live", "polite");
+
+                            bar.appendChild(populateBtn);
+                            bar.appendChild(badge);
+                            bar.appendChild(desc);
+                            bar.appendChild(resultSpan);
+
+                            // Prepend so the bar sits above the field values
+                            content.insertBefore(bar, content.firstChild);
+                        }
+
+                        content.dataset.loaded = "true";
+                    }
+                });
+                headerBtn.addEventListener("keydown", function (e) {
+                    if (
+                        e.key === "Escape" &&
+                        versionEl.classList.contains("expanded")
+                    ) {
+                        versionEl.classList.remove("expanded");
+                        headerBtn.setAttribute("aria-expanded", "false");
+                    }
+                });
+                versionEl.appendChild(headerBtn);
+                versionEl.appendChild(content);
+                container.appendChild(versionEl);
+            });
+        }
+
+        function renderFieldValues(container, fieldValues) {
+            container.innerHTML = "";
+            if (fieldValues.length === 0) {
+                container.innerHTML =
+                    '<div class="pdc-no-results">No field values</div>';
+                return;
+            }
+            var sorted = fieldValues.slice().sort(function (a, b) {
+                var posA =
+                    a.applicationFormField &&
+                    a.applicationFormField.position != null
+                        ? a.applicationFormField.position
+                        : a.position != null
+                          ? a.position
+                          : 999;
+                var posB =
+                    b.applicationFormField &&
+                    b.applicationFormField.position != null
+                        ? b.applicationFormField.position
+                        : b.position != null
+                          ? b.position
+                          : 999;
+                return posA - posB;
+            });
+            var loaded = 0;
+            function loadMore() {
+                var end = Math.min(loaded + FIELDS_PER_PAGE, sorted.length);
+                for (var i = loaded; i < end; i++) {
+                    var fv = sorted[i];
+                    var field = fv.applicationFormField || {};
+                    var label = field.label || "Unknown Field";
+                    var instructions = field.instructions || "";
+                    var position =
+                        field.position != null
+                            ? field.position
+                            : fv.position != null
+                              ? fv.position
+                              : "-";
+                    var value = fv.value || "";
+                    var isEmpty = !value;
+                    var isLongText = value.length > 200;
+                    var fieldEl = document.createElement("div");
+                    fieldEl.className = "pdc-field-item";
+                    var valueClass = isEmpty
+                        ? "pdc-field-value empty"
+                        : isLongText
+                          ? "pdc-field-value truncated"
+                          : "pdc-field-value";
+                    fieldEl.innerHTML =
+                        '<div class="pdc-field-label">' +
+                        escapeHtml(label) +
+                        ' <span class="pdc-field-position">#' +
+                        position +
+                        "</span>" +
+                        "</div>" +
+                        (instructions
+                            ? '<div class="pdc-field-instructions">' +
+                              escapeHtml(instructions) +
+                              "</div>"
+                            : "") +
+                        '<div class="' +
+                        valueClass +
+                        '"' +
+                        (isEmpty
+                            ? ""
+                            : ' draggable="true" tabindex="0" role="button"') +
+                        ' aria-roledescription="' +
+                        (isEmpty ? "" : "draggable field value") +
+                        '"' +
+                        ' data-drag-value="' +
+                        escapeAttr(value) +
+                        '"' +
+                        ' data-drag-label="' +
+                        escapeAttr(label) +
+                        '"' +
+                        ' aria-label="' +
+                        escapeAttr(label) +
+                        ": " +
+                        (isEmpty
+                            ? "no response"
+                            : escapeAttr(value.substring(0, 100))) +
+                        '"' +
+                        ">" +
+                        (isEmpty ? "(no response)" : escapeHtml(value)) +
+                        "</div>" +
+                        (isLongText
+                            ? '<button type="button" class="pdc-text-toggle" aria-expanded="false"' +
+                              ' aria-label="Toggle full text for ' +
+                              escapeAttr(label) +
+                              '">Show more</button>'
+                            : "");
+                    if (isLongText) {
+                        var toggle = fieldEl.querySelector(".pdc-text-toggle");
+                        var valueEl = fieldEl.querySelector(".pdc-field-value");
+                        toggle.addEventListener(
+                            "click",
+                            (function (t, v) {
+                                return function () {
+                                    var isExpanded =
+                                        !v.classList.contains("expanded-text");
+                                    v.classList.toggle("expanded-text");
+                                    t.textContent = isExpanded
+                                        ? "Show less"
+                                        : "Show more";
+                                    t.setAttribute(
+                                        "aria-expanded",
+                                        String(isExpanded),
+                                    );
+                                };
+                            })(toggle, valueEl),
+                        );
+                    }
+                    if (!isEmpty) {
+                        attachDragEvents(
+                            fieldEl.querySelector(".pdc-field-value"),
+                            value,
+                        );
+                    }
+                    container.appendChild(fieldEl);
+                }
+                loaded = end;
+                var existingBtn = container.querySelector(".pdc-load-more");
+                if (loaded < sorted.length) {
+                    var remaining = sorted.length - loaded;
+                    if (!existingBtn) {
+                        var btn = document.createElement("button");
+                        btn.type = "button";
+                        btn.className = "pdc-load-more";
+                        btn.textContent =
+                            "Load more (" + remaining + " remaining)";
+                        btn.setAttribute(
+                            "aria-label",
+                            "Load " + remaining + " more field values",
+                        );
+                        btn.addEventListener("click", function () {
+                            loadMore();
+                            if (loaded >= sorted.length) btn.remove();
+                            else {
+                                var r = sorted.length - loaded;
+                                btn.textContent =
+                                    "Load more (" + r + " remaining)";
+                                btn.setAttribute(
+                                    "aria-label",
+                                    "Load " + r + " more field values",
+                                );
+                            }
+                        });
+                        container.appendChild(btn);
+                    } else {
+                        existingBtn.textContent =
+                            "Load more (" + remaining + " remaining)";
+                        existingBtn.setAttribute(
+                            "aria-label",
+                            "Load " + remaining + " more field values",
+                        );
+                    }
+                } else if (existingBtn) {
+                    existingBtn.remove();
+                }
+            }
+            loadMore();
+        }
+
+        function attachDragEvents(valueEl, value) {
+            valueEl.addEventListener("dragstart", function (e) {
+                e.dataTransfer.setData("text/plain", value);
+                e.dataTransfer.effectAllowed = "copy";
+                var ghost = $("dragGhost");
+                if (ghost) {
+                    ghost.textContent =
+                        value.length > 40 ? value.slice(0, 40) + "..." : value;
+                    e.dataTransfer.setDragImage(ghost, 0, 0);
+                }
+                if (window.DropTargetManager) DropTargetManager.showTargets();
+                announce("Dragging: " + value.substring(0, 60));
+            });
+            valueEl.addEventListener("dragend", function () {
+                if (window.DropTargetManager) DropTargetManager.hideTargets();
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            var div = document.createElement("div");
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        function escapeAttr(str) {
+            if (!str) return "";
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+        }
+
+        // ── Auto-populate executor ────────────────────────────────
+        // Separated from the delegation handler so it can be called
+        // after an async expandAndScan if fields weren't ready yet.
+        function doAutoPopulate(btn, versionContent) {
+            var fieldValues = versionContent._pdcFieldValues;
+            var matchResult = computeMatches(fieldValues);
+
+            if (matchResult.total === 0) {
+                announce("No matching fields found to populate.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Populating...";
+
+            // Small delay so the button state renders before
+            // potentially expensive DOM operations.
+            setTimeout(function () {
+                var result = autoPopulateFields(matchResult.matches);
+                var resultSpan = versionContent.querySelector(
+                    ".pdc-populate-result",
+                );
+
+                var message;
+                if (result.skipped === 0) {
+                    message =
+                        "Populated " +
+                        result.populated +
+                        " field" +
+                        (result.populated !== 1 ? "s" : "");
+                } else {
+                    message =
+                        "Populated " +
+                        result.populated +
+                        ", skipped " +
+                        result.skipped;
+                }
+
+                if (resultSpan) {
+                    resultSpan.textContent = message;
+                    resultSpan.classList.toggle(
+                        "has-errors",
+                        result.skipped > 0,
+                    );
+                }
+
+                btn.disabled = false;
+                btn.textContent = "Auto-populate";
+                announce(message);
+
+                if (result.errors.length > 0) {
+                    // console.warn('[PDC] Auto-populate skipped fields:', result.errors);
+                }
+            }, 50);
+        }
+
+        // ── Event delegation ─────────────────────────────────────
+        // Bound once on document.body. Survives any Fluxx DOM
+        // churn because the listener lives on a stable ancestor
+        // and matches the clicked element at event time.
+
+        // Match the clicked element (or an ancestor) by data-original-id, with
+        // an id fallback for the post-refreshCaller raw-stencil state where
+        // Fluxx has not stamped data-original-id (id is the authored "x" or a
+        // suffixed "x-36"). Same rationale as $().
+        function findDelegateTarget(event, attrValue) {
+            var el = event.target;
+            while (el && el !== document.body) {
+                if (el.getAttribute) {
+                    if (el.getAttribute("data-original-id") === attrValue)
+                        return el;
+                    var id = el.id;
+                    if (
+                        id &&
+                        (id === attrValue ||
+                            id.indexOf(attrValue + "-") === 0)
+                    )
+                        return el;
+                }
+                el = el.parentElement;
+            }
+            return null;
+        }
+
+        // Prevent double-clicks during async operations
+        var loginInProgress = false;
+        var launchInProgress = false;
+
+        document.body.addEventListener("click", function (event) {
+            // ── Login button ──
+            if (findDelegateTarget(event, "pdc-login-btn")) {
+                if (loginInProgress) return;
+                var loginBtn = findDelegateTarget(event, "pdc-login-btn");
+                loginInProgress = true;
+                loginBtn.disabled = true;
+                loginBtn.textContent = "Logging in...";
+                announce("Logging in to PDC...");
+                oauth
+                    .loginWithPopup()
+                    .then(function () {
+                        // console.log('[PDC] Login successful');
+                        updateAuthUI();
+                    })
+                    .catch(function (err) {
+                        // console.error('[PDC] Login failed:', err);
+                        announce("Login failed. Please try again.");
+                        oauth.logout();
+                        updateAuthUI();
+                    })
+                    .finally(function () {
+                        loginInProgress = false;
+                        var btn = $("pdc-login-btn");
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = "Log in to PDC";
+                        }
+                    });
+                return;
+            }
+
+            // ── Launch button ──
+            if (findDelegateTarget(event, "pdc-launch-btn")) {
+                if (launchInProgress) return;
+                var launchBtn = findDelegateTarget(event, "pdc-launch-btn");
+                launchInProgress = true;
+                launchBtn.disabled = true;
+                launchBtn.textContent = "Retrieving Proposals...";
+                announce("Retrieving proposals from PDC...");
+                var launchPanel = panelToOpen();
+                fetchProposalPage(1)
+                    .then(function (data) {
+                        // console.log('[PDC] Proposals loaded:', (data.entries && data.entries.length) || 0, 'entries');
+
+                        // ── DEBUG: log raw response structure ──
+                        // Remove this block once the field path is confirmed.
+                        // console.group('[PDC DEBUG] Raw proposal response');
+                        // console.log('Full response:', JSON.parse(JSON.stringify(data)));
+                        if (data.entries && data.entries.length > 0) {
+                            var firstEntry = data.entries[0];
+                            // console.log('First entry keys:', Object.keys(firstEntry));
+                            if (
+                                firstEntry.versions &&
+                                firstEntry.versions.length > 0
+                            ) {
+                                var firstVersion = firstEntry.versions[0];
+                                // console.log('First version keys:', Object.keys(firstVersion));
+                                if (
+                                    firstVersion.fieldValues &&
+                                    firstVersion.fieldValues.length > 0
+                                ) {
+                                    var firstFV = firstVersion.fieldValues[0];
+                                    // console.log('First fieldValue keys:', Object.keys(firstFV));
+                                    // console.log('First fieldValue full object:', JSON.parse(JSON.stringify(firstFV)));
+                                    if (firstFV.applicationFormField) {
+                                        // console.log('applicationFormField keys:', Object.keys(firstFV.applicationFormField));
+                                        // console.log('applicationFormField full:', JSON.parse(JSON.stringify(firstFV.applicationFormField)));
+                                        if (
+                                            firstFV.applicationFormField
+                                                .baseField
+                                        ) {
+                                            // console.log('baseField keys:', Object.keys(firstFV.applicationFormField.baseField));
+                                            // console.log('baseField full:', JSON.parse(JSON.stringify(firstFV.applicationFormField.baseField)));
+                                        } else {
+                                            // console.warn('No baseField property on applicationFormField. Check for baseFieldShortCode or similar flat key.');
+                                        }
+                                    } else {
+                                        // console.warn('No applicationFormField property on fieldValue. The short code may live elsewhere.');
+                                    }
+                                }
+                            }
+                        }
+                        // console.groupEnd();
+                        // ── END DEBUG ──
+
+                        var panelBody = panelPart(launchPanel, "panelBody");
+                        if (panelBody) renderEntries(data, panelBody);
+                        openPanel(launchPanel);
+                        if (window.fluxxAPI) {
+                            fluxxAPI.expandAndScan().then(function () {
+                                if (window.DropTargetManager)
+                                    DropTargetManager.activate();
+                            });
+                        }
+                    })
+                    .catch(function (err) {
+                        // console.error('[PDC] Proposal load failed:', err);
+                        announce("Failed to load proposals. Please try again.");
+                    })
+                    .finally(function () {
+                        launchInProgress = false;
+                        var btn = $("pdc-launch-btn");
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = "Launch PDC Data Explorer";
+                        }
+                    });
+                return;
+            }
+
+            // ── Logout button ──
+            if (findDelegateTarget(event, "pdc-logout-btn")) {
+                oauth.logout();
+                closePanel();
+                updateAuthUI();
+                return;
+            }
+
+            // ── Close panel button ──
+            if (findDelegateTarget(event, "closeBtn")) {
+                closePanel();
+                return;
+            }
+
+            // ── Auto-populate button ──
+            if (findDelegateTarget(event, "pdc-auto-populate-btn")) {
+                var populateBtn = findDelegateTarget(
+                    event,
+                    "pdc-auto-populate-btn",
+                );
+
+                // Walk up to find the version-content that holds the
+                // field values array we stashed during renderVersions.
+                var versionContent = populateBtn.closest(
+                    ".pdc-version-content",
+                );
+                if (!versionContent || !versionContent._pdcFieldValues) {
+                    // console.warn('[PDC] Auto-populate: could not find field values for this version');
+                    return;
+                }
+
+                // Ensure Fluxx fields are scanned
+                if (!window.fluxxFields || window.fluxxFields.length === 0) {
+                    if (window.fluxxAPI) {
+                        populateBtn.disabled = true;
+                        populateBtn.textContent = "Scanning fields...";
+                        fluxxAPI.expandAndScan().then(function () {
+                            doAutoPopulate(populateBtn, versionContent);
+                        });
+                    } else {
+                        announce(
+                            "Form fields not available. Please try again.",
+                        );
+                    }
+                    return;
+                }
+
+                doAutoPopulate(populateBtn, versionContent);
+                return;
+            }
+        });
+
+        /* ── Search (delegation) ──────────────────────────────────── */
+        var searchTimeout = null;
+
+        // Hides the loaded entries that don't match the search box; also
+        // run on entries added by "Load more". Returns how many show.
+        function applySearchFilter() {
+            var panel = currentPanel();
+            var searchInput = panelPart(panel, "searchInput");
+            var query = searchInput
+                ? searchInput.value.toLowerCase().trim()
+                : "";
+            var items = panel
+                ? panel.querySelectorAll(".pdc-entry-item")
+                : [];
+            var visibleCount = 0;
+            items.forEach(function (item) {
+                var text = item.dataset.searchText || "";
+                var hidden = !!query && !text.includes(query);
+                item.classList.toggle("hidden", hidden);
+                if (!hidden) visibleCount++;
+            });
+            return visibleCount;
+        }
+
+        document.body.addEventListener("input", function (e) {
+            var searchInput = findDelegateTarget(e, "searchInput");
+            if (!searchInput) return;
+            var query = searchInput.value.toLowerCase().trim();
+            var visibleCount = applySearchFilter();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(function () {
+                if (query) {
+                    announce(
+                        visibleCount +
+                            " result" +
+                            (visibleCount !== 1 ? "s" : "") +
+                            " found",
+                    );
+                } else {
+                    announce("Search cleared. Showing all entries.");
+                }
+            }, 500);
+        });
+
+        /* ── Account proxy dropdown (delegation) ──────────────────── */
+        // The step-3 proxy select controls whether the session controls show.
+        // On change we write the answer into the hidden native field (so it
+        // persists on the normal form save), then re-sync show/hide. Change
+        // bubbles to body. We also handle a change fired on the native field
+        // directly (some other path sets it): just re-seed the proxy + re-sync.
+        document.body.addEventListener("change", function (e) {
+            if (findDelegateTarget(e, "pdc-account-proxy")) {
+                writeAccountAnswerToNative();
+                syncSessionControls();
+            } else if (
+                findDelegateTarget(e, "grant_request_pdc_account_exists")
+            ) {
+                syncSessionControls();
+            }
+        });
+
+        /* ── Panel drag ───────────────────────────────────────────── */
+        var isDragging = false;
+        var startX, startY, startLeft, startTop;
+
+        document.body.addEventListener("mousedown", function (e) {
+            var header = findDelegateTarget(e, "pdcPanelHeader");
+            if (!header) return;
+            if (e.target.tagName === "BUTTON") return;
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            var panel = currentPanel();
+            if (panel) {
+                var rect = panel.getBoundingClientRect();
+                startLeft = rect.left;
+                startTop = rect.top;
+            }
+            document.body.style.userSelect = "none";
+        });
+
+        document.addEventListener("mousemove", function (e) {
+            if (!isDragging) return;
+            var panel = currentPanel();
+            if (!panel) return;
+            panel.style.left = startLeft + e.clientX - startX + "px";
+            panel.style.top = startTop + e.clientY - startY + "px";
+            panel.style.right = "auto";
+        });
+
+        document.addEventListener("mouseup", function () {
+            if (!isDragging) return;
+            isDragging = false;
+            document.body.style.userSelect = "";
+        });
+
+        /* ── Escape closes panel ──────────────────────────────────── */
+        document.addEventListener("keydown", function (e) {
+            if (e.key !== "Escape") return;
+            var panel = currentPanel();
+            if (panel && !panel.classList.contains("hidden")) {
+                closePanel();
+            }
+        });
+
+        // ── Init sync with bounded retry ─────────────────────────
+        // syncSessionControls() runs from block 4's <img onload>, which
+        // can fire before Fluxx has added `detail-open` to the card or
+        // hydrated the native dropdown's saved value. A single call then
+        // reads an unresolved/pre-hydration dropdown and leaves the
+        // controls hidden even when the answer is already "Yes" — the
+        // grantee had to toggle the dropdown to trigger the change handler.
+        // Instead, poll briefly until the account dropdown resolves in the
+        // visible card, applying the gate each tick, then stop. Bounded so
+        // it never spins forever (No/blank answers legitimately never
+        // resolve to a value, so cap the attempts). The change handler and
+        // cardListObserver still cover later state changes.
+        syncSessionControls();
+        var initSyncTries = 0;
+        var initSyncTimer = setInterval(function () {
+            initSyncTries++;
+            // The native field is the source of truth we seed the proxy from.
+            var native = getNativeAccountField();
+            // Re-apply the gate (which re-seeds the proxy) on every tick while
+            // we wait for the card to become active and the field to hydrate.
+            syncSessionControls();
+            // Stop once the native field is resolvable, or after ~3s.
+            if ((native && native.value !== undefined) || initSyncTries >= 30) {
+                clearInterval(initSyncTimer);
+            }
+        }, 100);
+        // console.log('[PDC] Behavior wiring complete');
+    };
+</script><img style="display: none" src="/images/fluxx_engine/theme/default/icons/sitemap.png" onload="if (window._pdcInitBehavior) window._pdcInitBehavior();" alt="" />

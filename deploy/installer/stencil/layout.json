@@ -1,0 +1,32 @@
+{
+  "_comment": "The deploy model's form layout. PDC Bootstrap Deploy Model overwrites the model's existing form stencil with this. No other installer method edits the stencil; they only write field values that this layout renders. Each element is a group (with elements), a field (an attribute on the deploy model; its config adds Fluxx field settings, such as the checkbox list), a text element whose text is read from text_path in the repo (list_only: shown only in the list view, like the PDC Integration Map's first element), or raw: an element exactly as Fluxx stores it (uids are regenerated and filters pointed at the deploy model).",
+
+  "elements": [
+    { "text_path": "deploy/installer/stencil/List.liquid", "list_only": true },
+    { "group": "Settings", "elements": [
+      { "field": "repo_url",            "label": "Repo URL" },
+      { "field": "repo_ref",            "label": "Repo Ref (branch or tag)" },
+      { "field": "pdc_environment",         "label": "PDC Environment (Production or Sandbox; Install writes it into Get PDC Base URL)" },
+      { "field": "pdc_client_id_input",     "label": "PDC Client ID (from the PDC; applied when you save, then cleared)" },
+      { "field": "pdc_client_secret_input", "label": "PDC Client Secret (from the PDC; applied when you save, then cleared)" },
+      { "field": "installer_role",      "label": "Installer Role (who can Update the PDC Integration)", "required": true,
+        "config": { "select_type": "multiple-select-transfer checkboxes", "enable_percentage_slider": "0", "allow_percent": "0", "disable_validation_100_totals": "0", "searchable_ui": "0", "allow_only_deepest_selection": "0" } },
+      { "raw": { "element_type": "spacer", "name": "spacer", "config": { "number_of_lines": "1", "show_hr": true }, "visibility": { "visible_show": true, "visible_form": true, "advanced_filter": "1", "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcInstallConfig\"}", "advanced_sort": "[]" }, "styling": { "alignment": "left" } } },
+      { "field": "pdc_event_role",      "label": "Role that can use PDC Integration Map buttons", "config": { "select_type": "multiple-select-transfer checkboxes", "enable_percentage_slider": "0", "allow_percent": "0", "disable_validation_100_totals": "0", "searchable_ui": "0", "allow_only_deepest_selection": "0" } },
+      { "field": "pdc_grantee_profile", "label": "Grantee profile", "config": { "select_type": "multiple-select-transfer checkboxes", "enable_percentage_slider": "0", "allow_percent": "0", "disable_validation_100_totals": "0", "searchable_ui": "0", "allow_only_deepest_selection": "0" } },
+      { "field": "pdc_staff_profile",   "label": "Staff profile", "config": { "select_type": "multiple-select-transfer checkboxes", "enable_percentage_slider": "0", "allow_percent": "0", "disable_validation_100_totals": "0", "searchable_ui": "0", "allow_only_deepest_selection": "0" } },
+      { "field": "grant_request_themes", "label": "Grant Request themes that show grantees the PDC component", "config": { "select_type": "multiple-select-transfer checkboxes", "enable_percentage_slider": "0", "allow_percent": "0", "disable_validation_100_totals": "0", "searchable_ui": "0", "allow_only_deepest_selection": "0" } }
+    ] },
+    { "raw": { "element_type": "spacer", "name": "spacer", "config": { "number_of_lines": "1" }, "visibility": { "visible_show": true, "visible_form": true, "advanced_filter": "1", "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcInstallConfig\"}", "advanced_sort": "[]" }, "styling": { "alignment": "left" } } },
+    { "group": "Results", "elements": [
+      { "text_path": "deploy/installer/stencil/Results.liquid" }
+    ] },
+    { "raw": { "element_type": "spacer", "name": "spacer", "config": { "number_of_lines": "1" }, "visibility": { "visible_show": true, "visible_form": true, "advanced_filter": "1", "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcInstallConfig\"}", "advanced_sort": "[]" }, "styling": { "alignment": "left" } } },
+    { "group": "Snapshots", "elements": [
+      { "raw": { "element_type": "component", "name": "model_documents", "label": "Documents", "legacy": null,
+                 "config": { "label": "Documents", "disable_add": true, "disable_generate_button": true, "always_allow_uploading": "0",
+                             "doc_label": "default", "pdf_snapshot": "0", "enable_docusign": "0" },
+                 "visibility": { "visible_show": true, "visible_form": true, "advanced_filter": "1", "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcInstallConfig\"}", "advanced_sort": "[]" }, "styling": { "alignment": "left" } } }
+    ] }
+  ]
+}

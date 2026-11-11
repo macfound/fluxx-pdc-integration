@@ -1,0 +1,104 @@
+{
+  "elements": [
+    {
+      "config": {
+        "label": "PDC Field",
+        "required": true,
+        "show_as_radio_buttons": "0"
+      },
+      "element_type": "attribute",
+      "label": "PDC Field",
+      "name": "pdc_field",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcMappedField1\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "label": "PDC Field Position",
+        "min_value": "0",
+        "numeric_range": "0",
+        "numeric_range_input_type": "select",
+        "required": true
+      },
+      "element_type": "attribute",
+      "label": "PDC Field Position",
+      "name": "pdc_field_position",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcMappedField1\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "label": "Fluxx Field",
+        "required": "0",
+        "show_as_radio_buttons": "0"
+      },
+      "element_type": "attribute",
+      "label": "Fluxx Field",
+      "name": "fluxx_field",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcMappedField1\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "label": "Field Label from Application in Fluxx",
+        "required": "0"
+      },
+      "element_type": "attribute",
+      "label": "Field Label from Application in Fluxx",
+      "name": "pdc_application_field_instructions",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcMappedField1\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "label": "Fluxx Related Field - Field Name",
+        "required": "0"
+      },
+      "element_type": "attribute",
+      "label": "Fluxx Related Field - Field Name",
+      "name": "fluxx_related_field_field_name",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcMappedField1\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    }
+  ]
+}

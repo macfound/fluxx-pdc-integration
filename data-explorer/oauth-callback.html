@@ -1,0 +1,55 @@
+<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="(function() {
+  // PDC:ELEMENT id=oauth-callback
+  // PDC OAuth callback (popup side).
+  //
+  // The app sends COOP `same-origin-allow-popups`, which SEVERS window.opener
+  // as soon as this popup navigates cross-origin to the PDC auth server. So on
+  // return window.opener is null and postMessage-to-opener cannot work. But the
+  // popup lands on the SAME origin as the app, so we hand the result back via
+  // same-origin transports instead: a localStorage write (the durable fallback)
+  // plus a BroadcastChannel broadcast (the instant path). The opener listens on
+  // both, validates state, exchanges the code, then closes this popup via its
+  // own held reference. See '3. oauth.html' loginWithPopup().
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var code = params.get('code');
+    var state = params.get('state');
+    var error = params.get('error');
+    var errorDesc = params.get('error_description');
+
+    // Normal page load (not an OAuth return): do nothing.
+    if (!code && !state && !error) return;
+
+    var result;
+    if (error) {
+      result = { type: 'oauth_callback', error: error, error_description: errorDesc || '' };
+    } else if (code && state) {
+      result = { type: 'oauth_callback', code: code, state: state };
+    } else {
+      result = { type: 'oauth_callback', error: 'incomplete_response', error_description: 'Missing code or state' };
+    }
+
+    // Durable fallback: same-origin localStorage the opener can read/poll.
+    try {
+      localStorage.setItem('pdc_oauth_result', JSON.stringify({ code: result.code, state: result.state, error: result.error, error_description: result.error_description, ts: Date.now() }));
+    } catch (e) {}
+
+    // Instant path: broadcast to the opener's same-origin channel.
+    try {
+      var bc = new BroadcastChannel('pdc_oauth_channel');
+      bc.postMessage(result);
+      bc.close();
+    } catch (e) {}
+
+    // Scrub code/state from the visible URL.
+    try {
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+      }
+    } catch (e) {}
+
+    // Best-effort self-close; the opener also closes us via its popup reference.
+    try { window.close(); } catch (e) {}
+
+  } catch (e) {}
+})();" alt="">

@@ -1,0 +1,430 @@
+{
+  "elements": [
+    {
+      "config": {
+        "allow_script": "0",
+        "strip_html": "0",
+        "text": "{{ model.opportunity }} | {{ model.application }}<br>\nState: {{ model.state }}<br>\nLast Updated: <i>{{ model.updated_at | format: 'mdy' }}</i>"
+      },
+      "element_type": "text",
+      "name": "text",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+        "advanced_sort": "[]",
+        "visible_list": true
+      }
+    },
+    {
+      "config": {
+        "collapsible": true,
+        "default_open": true,
+        "disable_lazy_load": "0",
+        "hide_label": "0",
+        "label": "General Configuration",
+        "reveal_if_type": "show",
+        "show_in_toc": "0"
+      },
+      "element_type": "group",
+      "elements": [
+        {
+          "config": {
+            "label": "Name of Integration",
+            "required": true
+          },
+          "element_type": "attribute",
+          "label": "Name of Integration",
+          "name": "name",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "read_only_states": [
+              "active"
+            ],
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "label": "Grant Request Themes (grants of these themes use this map)",
+            "required": "0",
+            "select_type": "multiple-select-transfer checkboxes",
+            "enable_percentage_slider": "0",
+            "allow_percent": "0",
+            "disable_validation_100_totals": "0",
+            "searchable_ui": "0",
+            "allow_only_deepest_selection": "0"
+          },
+          "element_type": "attribute",
+          "label": "Grant Request Themes (grants of these themes use this map)",
+          "name": "grant_request_themes",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "label": "Opportunity",
+            "required": "0",
+            "show_as_radio_buttons": "0"
+          },
+          "element_type": "attribute",
+          "label": "Opportunity",
+          "name": "opportunity",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "read_only_states": [
+              "active"
+            ],
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "label": "Funder Short Code",
+            "required": "0"
+          },
+          "element_type": "attribute",
+          "label": "Funder Short Code",
+          "name": "funder_short_code",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "read_only_states": [
+              "active"
+            ],
+            "visible_form": true,
+            "visible_show": true
+          }
+        }
+      ],
+      "label": "General Configuration",
+      "name": "group",
+      "styling": {
+        "alignment": "left",
+        "border_bottom_enabled": true,
+        "border_left_enabled": true,
+        "border_radius": "5",
+        "border_right_enabled": true,
+        "border_top_enabled": true,
+        "padding_bottom": "5",
+        "padding_left": "5",
+        "padding_right": "5",
+        "padding_top": "5"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "number_of_lines": "1"
+      },
+      "element_type": "spacer",
+      "name": "spacer",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "collapsible": true,
+        "default_open": true,
+        "disable_lazy_load": "0",
+        "hide_label": "0",
+        "label": "PDC Application Form",
+        "reveal_if_type": "show",
+        "show_in_toc": "0"
+      },
+      "element_type": "group",
+      "elements": [
+        {
+          "config": {
+            "boolean_default": "Blank",
+            "label": "Create New Application Form",
+            "required": "0",
+            "widget_type": "Checkbox"
+          },
+          "element_type": "attribute",
+          "label": "Create New Application Form",
+          "name": "create_new_application_form",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "read_only_states": [
+              "active"
+            ],
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "label": "Application",
+            "required": "0",
+            "show_as_radio_buttons": "0"
+          },
+          "element_type": "attribute",
+          "label": "Application",
+          "name": "application",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "read_only_states": [
+              "active"
+            ],
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "allow_script": true,
+            "strip_html": "0",
+            "text": "<br><br><a title=\"Add a Fields Mapped From Fluxx to PDC\" class=\"to-modal pdc-add-mapping-btn\" data-on-success=\"refreshCaller,close\" href=\"/machine_models/new?_force_set%5Bmachine_model%5Bpdc_mapping_field%5D%5D={{model.id}}&amp;child_model=1&amp;machine_model%5Bpdc_mapping_field%5D={{model.id}}&amp;parent_model_class=MacModelTypeDynPdcApplicationForm1&amp;parent_model_id={{model.id}}&amp;type=MacModelTypeDynPdcMappedField1\">Add a Field Mapping From Fluxx to PDC</a><br>\n\n{% assign sorted_fields = model.SortMappedFieldsbyFieldPosition %}\n{% assign mapping_warnings = model.Mapped_Field_Warnings %}\n\n<table class=\"pdc-mapped-fields\">\n  <colgroup>\n    <col class=\"col-content\">\n    <col class=\"col-actions\">\n  </colgroup>\n  <tbody>\n    {% if sorted_fields.size > 0 %}\n      {% for field in sorted_fields %}\n        {% assign is_complete = true %}\n        {% unless field.pdc_field_position and field.fluxx_field and field.pdc_field and field.pdc_application_field_instructions %}\n          {% assign is_complete = false %}\n        {% endunless %}\n        \n        <tr class=\"field-row\">\n          <td class=\"content-cell\">\n            <table class=\"inner-table\">\n              <tr class=\"main-row\">\n                <td class=\"position\">\n                  {% if field.pdc_field_position %}\n                    <strong>{{ field.pdc_field_position }}</strong>\n                  {% else %}\n                    <span class=\"empty\">—</span>\n                  {% endif %}\n                </td>\n                <td class=\"status\">\n                  {% if is_complete %}\n                    <span class=\"complete\">✓</span>\n                  {% else %}\n                    <span class=\"incomplete\">⚠</span>\n                  {% endif %}\n                </td>\n                <td class=\"instructions-preview\">\n                  <div class=\"instructions-label\">Instructions</div>\n                  <div class=\"instructions-text\">\n                    {% if field.pdc_application_field_instructions %}\n                      {% if field.pdc_application_field_instructions.size > 250 %}\n                        {{ field.pdc_application_field_instructions | truncate: 250, \"...\" }}\n                      {% else %}\n                        {{ field.pdc_application_field_instructions }}\n                      {% endif %}\n                    {% else %}\n                      <em>No instructions provided</em>\n                    {% endif %}\n                  </div>\n                </td>\n              </tr>\n              <tr class=\"detail-row\">\n                <td colspan=\"3\">\n                  <div class=\"field-details\">\n                    <div class=\"field-item\">\n                      <span class=\"field-label\">Fluxx Field:</span>\n                      {% if field.fluxx_field %}\n                        <span class=\"field-value\">{{ field.fluxx_field }}</span>\n                      {% else %}\n                        <span class=\"field-value empty\">Not mapped</span>\n                      {% endif %}\n                    </div>\n                    <div class=\"field-item\">\n                      <span class=\"field-label\">PDC Field:</span>\n                      {% if field.pdc_field %}\n                        <span class=\"field-value\">{{ field.pdc_field }}</span>\n                      {% else %}\n                        <span class=\"field-value empty\">Not set</span>\n                      {% endif %}\n                    </div>\n                    {% assign warning_key = field.id | append: '' %}\n                    {% assign field_warning = mapping_warnings[warning_key] %}\n                    {% if field_warning %}<div class=\"field-warning\">&#9888; {{ field_warning | escape }}</div>{% endif %}\n                  </div>\n                </td>\n              </tr>\n            </table>\n          </td>\n          <td class=\"actions\">\n            <a href=\"/machine_models/{{ field.id }}\" \n               class=\"new-detail action-btn view\"\n               title=\"View\" \n               data-insert=\"after\">View</a>\n            <a href=\"/machine_models/{{ field.id }}/edit\"\n               class=\"action-btn edit to-modal\"\n               title=\"Edit\" \n               data-on-success=\"refreshCaller,close\">Edit</a>\n            <a href=\"/machine_models/{{ field.id }}\"\n               class=\"action-btn delete as-delete\"\n               title=\"Delete\" \n               data-on-success=\"refreshCaller\">Del</a>\n          </td>\n        </tr>\n      {% endfor %}\n    {% else %}\n      <tr>\n        <td class=\"no-data\" colspan=\"2\">No mapped fields found</td>\n      </tr>\n    {% endif %}\n  </tbody>\n</table>\n\n<style>\n  /* Outer table */\n  .pdc-mapped-fields {\n    width: 100%;\n    max-width: 493px;\n    border-collapse: collapse;\n    font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n    table-layout: fixed;\n  }\n  \n  /* Column definitions */\n  .pdc-mapped-fields .col-content {\n    width: calc(100% - 50px);\n  }\n  \n  .pdc-mapped-fields .col-actions {\n    width: 50px;\n  }\n  \n  /* Outer table cells */\n  .pdc-mapped-fields .field-row {\n    border-top: 2px solid #d0d0d0;\n    border-bottom: 2px solid #d0d0d0;\n  }\n  \n  .pdc-mapped-fields .content-cell {\n    vertical-align: top;\n    padding-top: 12px;\n  }\n  \n  /* Inner table */\n  .pdc-mapped-fields .inner-table {\n    width: 100%;\n    border-collapse: collapse;\n  }\n  \n  /* Main row styling */\n  .pdc-mapped-fields .main-row {\n    background: #f0f4f8;\n  }\n  \n  .pdc-mapped-fields .main-row td {\n    padding-right: 6px;\n    padding-left: 6px;\n    vertical-align: top;\n    padding-top: 8px;\n    margin-top: 8px;\n  }\n  \n  /* Position column */\n  .pdc-mapped-fields .position {\n    width: 30px;\n    text-align: center;\n    font-size: 16px;\n    font-weight: bold;\n    color: #2c3e50;\n  }\n  \n  .pdc-mapped-fields .position .empty {\n    color: #ccc;\n    font-weight: normal;\n  }\n  \n  /* Status column */\n  .pdc-mapped-fields .status {\n    width: 30px;\n    text-align: center;\n    font-size: 16px;\n  }\n  \n  .pdc-mapped-fields .status .complete {\n    color: #28a745;\n  }\n  \n  .pdc-mapped-fields .status .incomplete {\n    color: #ffc107;\n  }\n  \n  /* Instructions column */\n  .pdc-mapped-fields .instructions-preview {\n    padding-left: 8px;\n    padding-right: 8px;\n  }\n  \n  .pdc-mapped-fields .instructions-label {\n    font-size: 10px;\n    text-transform: uppercase;\n    color: #666;\n    margin-bottom: 2px;\n    font-weight: 600;\n  }\n  \n  .pdc-mapped-fields .instructions-text {\n    font-size: 12px;\n    color: #495057;\n    line-height: 1.3;\n    word-wrap: break-word;\n  }\n  \n  .pdc-mapped-fields .instructions-text em {\n    color: #999;\n    font-style: italic;\n  }\n  \n  /* Detail row styling */\n  .pdc-mapped-fields .detail-row {\n    background: white;\n  }\n  \n  .pdc-mapped-fields .field-details {\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    padding-left: 12px;\n    padding-right: 12px;\n  }\n  \n  .pdc-mapped-fields .field-item {\n    display: flex;\n    align-items: baseline;\n  }\n  \n  .pdc-mapped-fields .field-label {\n    font-weight: 600;\n    color: #495057;\n    margin-right: 6px;\n    font-size: 11px;\n    min-width: 70px;\n  }\n  \n  .pdc-mapped-fields .field-value {\n    color: #212529;\n    font-size: 12px;\n    word-break: break-word;\n  }\n  \n  .pdc-mapped-fields .field-warning {\n    margin-top: 6px;\n    padding: 6px 8px;\n    background: #fff8e1;\n    border-left: 3px solid #f0ad4e;\n    color: #6d4c00;\n    font-size: 12px;\n  }\n\n  .pdc-mapped-fields .field-value.empty {\n    color: #999;\n    font-style: italic;\n  }\n  \n  /* Actions column */\n  .pdc-mapped-fields .actions {\n    padding-left: 2px;\n    padding-right: 2px;\n    vertical-align: top;\n    border-left: 1px solid #d0d0d0;\n  }\n  \n  .pdc-mapped-fields .action-btn {\n    display: block;\n    padding: 3px 4px;\n    margin-bottom: 2px;\n    border-radius: 2px;\n    text-decoration: none;\n    font-size: 11px;\n    font-weight: 500;\n    text-align: center;\n    transition: opacity 0.2s;\n  }\n  \n  .pdc-mapped-fields .action-btn:first-child {\n    margin-top: 8px; /* Match the padding of main-row td */\n  }\n  \n  .pdc-mapped-fields .action-btn.view {\n    background: #17a2b8;\n    color: white;\n  }\n  \n  .pdc-mapped-fields .action-btn.edit {\n    background: #6c757d;\n    color: white;\n  }\n  \n  .pdc-mapped-fields .action-btn.delete {\n    background: #dc3545;\n    color: white;\n  }\n  \n  .pdc-mapped-fields .action-btn:hover {\n    opacity: 0.8;\n  }\n  \n  /* No data styling */\n  .pdc-mapped-fields .no-data {\n    text-align: center;\n    padding: 40px;\n    color: #666;\n    font-size: 14px;\n  }\n\n  a.pdc-add-mapping-btn,\n  a.pdc-add-mapping-btn:link,\n  a.pdc-add-mapping-btn:visited,\n  a.pdc-add-mapping-btn:hover,\n  a.pdc-add-mapping-btn:focus\n  .pdc-add-mapping-btn {\n    display: block;\n    width: 100%;\n    padding: 12px 16px;\n    background: #28a745;\n    color: white !important;\n    text-align: center;\n    text-decoration: none;\n    font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n    font-size: 14px;\n    font-weight: 600;\n    border-radius: 4px;\n    border: none;\n    cursor: pointer;\n    transition: background-color 0.2s, box-shadow 0.2s;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);\n  }\n  \n  .pdc-add-mapping-btn:hover {\n    background: #218838;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);\n    color: white;\n    text-decoration: none;\n  }\n  \n  .pdc-add-mapping-btn:active {\n    background: #1e7e34;\n    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);\n  }\n  \n  .pdc-add-mapping-btn::before {\n    content: \"+ \";\n    font-weight: bold;\n  }\n\n</style>"
+          },
+          "element_type": "text",
+          "name": "text",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "show_states": [
+              "new",
+              "inactive"
+            ],
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "allow_script": true,
+            "strip_html": "0",
+            "text": "{% assign sorted_fields = model.SortMappedFieldsbyFieldPosition %}\n{% assign mapping_warnings = model.Mapped_Field_Warnings %}\n\n<table class=\"pdc-mapped-fields\">\n  <colgroup>\n    <col class=\"col-content\">\n    <col class=\"col-actions\">\n  </colgroup>\n  <tbody>\n    {% if sorted_fields.size > 0 %}\n      {% for field in sorted_fields %}\n        {% assign is_complete = true %}\n        {% unless field.pdc_field_position and field.fluxx_field and field.pdc_field and field.pdc_application_field_instructions %}\n          {% assign is_complete = false %}\n        {% endunless %}\n        \n        <tr class=\"field-row\">\n          <td class=\"content-cell\">\n            <table class=\"inner-table\">\n              <tr class=\"main-row\">\n                <td class=\"position\">\n                  {% if field.pdc_field_position %}\n                    <strong>{{ field.pdc_field_position }}</strong>\n                  {% else %}\n                    <span class=\"empty\">—</span>\n                  {% endif %}\n                </td>\n                <td class=\"status\">\n                  {% if is_complete %}\n                    <span class=\"complete\">✓</span>\n                  {% else %}\n                    <span class=\"incomplete\">⚠</span>\n                  {% endif %}\n                </td>\n                <td class=\"instructions-preview\">\n                  <div class=\"instructions-label\">Instructions</div>\n                  <div class=\"instructions-text\">\n                    {% if field.pdc_application_field_instructions %}\n                      {% if field.pdc_application_field_instructions.size > 250 %}\n                        {{ field.pdc_application_field_instructions | truncate: 250, \"...\" }}\n                      {% else %}\n                        {{ field.pdc_application_field_instructions }}\n                      {% endif %}\n                    {% else %}\n                      <em>No instructions provided</em>\n                    {% endif %}\n                  </div>\n                </td>\n              </tr>\n              <tr class=\"detail-row\">\n                <td colspan=\"3\">\n                  <div class=\"field-details\">\n                    <div class=\"field-item\">\n                      <span class=\"field-label\">Fluxx Field:</span>\n                      {% if field.fluxx_field %}\n                        <span class=\"field-value\">{{ field.fluxx_field }}</span>\n                      {% else %}\n                        <span class=\"field-value empty\">Not mapped</span>\n                      {% endif %}\n                    </div>\n                    <div class=\"field-item\">\n                      <span class=\"field-label\">PDC Field:</span>\n                      {% if field.pdc_field %}\n                        <span class=\"field-value\">{{ field.pdc_field }}</span>\n                      {% else %}\n                        <span class=\"field-value empty\">Not set</span>\n                      {% endif %}\n                    </div>\n                    {% assign warning_key = field.id | append: '' %}\n                    {% assign field_warning = mapping_warnings[warning_key] %}\n                    {% if field_warning %}<div class=\"field-warning\">&#9888; {{ field_warning | escape }}</div>{% endif %}\n                  </div>\n                </td>\n              </tr>\n            </table>\n          </td>\n          <td class=\"actions\">\n            <a href=\"/machine_models/{{ field.id }}\" \n               class=\"new-detail  action-btn view\"\n               title=\"View\" \n               data-insert=\"after\">View</a>\n          </td>\n        </tr>\n      {% endfor %}\n    {% else %}\n      <tr>\n        <td class=\"no-data\" colspan=\"2\">No mapped fields found</td>\n      </tr>\n    {% endif %}\n  </tbody>\n</table>\n\n<style>\n  /* Outer table */\n  .pdc-mapped-fields {\n    width: 100%;\n    max-width: 493px;\n    border-collapse: collapse;\n    font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n    table-layout: fixed;\n  }\n  \n  /* Column definitions */\n  .pdc-mapped-fields .col-content {\n    width: calc(100% - 50px);\n  }\n  \n  .pdc-mapped-fields .col-actions {\n    width: 50px;\n  }\n  \n  /* Outer table cells */\n  .pdc-mapped-fields .field-row {\n    border-top: 2px solid #d0d0d0;\n    border-bottom: 2px solid #d0d0d0;\n  }\n  \n  .pdc-mapped-fields .content-cell {\n    vertical-align: top;\n    padding-top: 12px;\n  }\n  \n  /* Inner table */\n  .pdc-mapped-fields .inner-table {\n    width: 100%;\n    border-collapse: collapse;\n  }\n  \n  /* Main row styling */\n  .pdc-mapped-fields .main-row {\n    background: #f0f4f8;\n  }\n  \n  .pdc-mapped-fields .main-row td {\n    padding-right: 6px;\n    padding-left: 6px;\n    vertical-align: top;\n    padding-top: 8px;\n    margin-top: 8px;\n  }\n  \n  /* Position column */\n  .pdc-mapped-fields .position {\n    width: 30px;\n    text-align: center;\n    font-size: 16px;\n    font-weight: bold;\n    color: #2c3e50;\n  }\n  \n  .pdc-mapped-fields .position .empty {\n    color: #ccc;\n    font-weight: normal;\n  }\n  \n  /* Status column */\n  .pdc-mapped-fields .status {\n    width: 30px;\n    text-align: center;\n    font-size: 16px;\n  }\n  \n  .pdc-mapped-fields .status .complete {\n    color: #28a745;\n  }\n  \n  .pdc-mapped-fields .status .incomplete {\n    color: #ffc107;\n  }\n  \n  /* Instructions column */\n  .pdc-mapped-fields .instructions-preview {\n    padding-left: 8px;\n    padding-right: 8px;\n  }\n  \n  .pdc-mapped-fields .instructions-label {\n    font-size: 10px;\n    text-transform: uppercase;\n    color: #666;\n    margin-bottom: 2px;\n    font-weight: 600;\n  }\n  \n  .pdc-mapped-fields .instructions-text {\n    font-size: 12px;\n    color: #495057;\n    line-height: 1.3;\n    word-wrap: break-word;\n  }\n  \n  .pdc-mapped-fields .instructions-text em {\n    color: #999;\n    font-style: italic;\n  }\n  \n  /* Detail row styling */\n  .pdc-mapped-fields .detail-row {\n    background: white;\n  }\n  \n  .pdc-mapped-fields .field-details {\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    padding-left: 12px;\n    padding-right: 12px;\n  }\n  \n  .pdc-mapped-fields .field-item {\n    display: flex;\n    align-items: baseline;\n  }\n  \n  .pdc-mapped-fields .field-label {\n    font-weight: 600;\n    color: #495057;\n    margin-right: 6px;\n    font-size: 11px;\n    min-width: 70px;\n  }\n  \n  .pdc-mapped-fields .field-value {\n    color: #212529;\n    font-size: 12px;\n    word-break: break-word;\n  }\n  \n  .pdc-mapped-fields .field-warning {\n    margin-top: 6px;\n    padding: 6px 8px;\n    background: #fff8e1;\n    border-left: 3px solid #f0ad4e;\n    color: #6d4c00;\n    font-size: 12px;\n  }\n\n  .pdc-mapped-fields .field-value.empty {\n    color: #999;\n    font-style: italic;\n  }\n  \n  /* Actions column */\n  .pdc-mapped-fields .actions {\n    padding-left: 2px;\n    padding-right: 2px;\n    vertical-align: top;\n    border-left: 1px solid #d0d0d0;\n  }\n  \n  .pdc-mapped-fields .action-btn {\n    display: block;\n    padding: 3px 4px;\n    margin-bottom: 2px;\n    border-radius: 2px;\n    text-decoration: none;\n    font-size: 11px;\n    font-weight: 500;\n    text-align: center;\n    transition: opacity 0.2s;\n  }\n  \n  .pdc-mapped-fields .action-btn:first-child {\n    margin-top: 8px; /* Match the padding of main-row td */\n  }\n  \n  .pdc-mapped-fields .action-btn.view {\n    background: #17a2b8;\n    color: white;\n  }\n  \n  .pdc-mapped-fields .action-btn.edit {\n    background: #6c757d;\n    color: white;\n  }\n  \n  .pdc-mapped-fields .action-btn.delete {\n    background: #dc3545;\n    color: white;\n  }\n  \n  .pdc-mapped-fields .action-btn:hover {\n    opacity: 0.8;\n  }\n  \n  /* No data styling */\n  .pdc-mapped-fields .no-data {\n    text-align: center;\n    padding: 40px;\n    color: #666;\n    font-size: 14px;\n  }\n</style>"
+          },
+          "element_type": "text",
+          "name": "text",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "show_states": [
+              "active"
+            ],
+            "visible_form": true,
+            "visible_show": true
+          }
+        },
+        {
+          "config": {
+            "field_operation": "existing",
+            "label": "Fields Mapped From Fluxx to PDC",
+            "relationship_field": "MacModelTypeDynPdcMappedField1,pdc_mapping_field",
+            "show_detail_link": true,
+            "show_edit_link": true,
+            "text": "<style>\n    .pdc-mapping-table {\n        border-collapse: collapse;\n        width: 100%;\n        margin: 20px 0;\n        box-shadow: 0 1px 3px rgba(0,0,0,0.1);\n        table-layout: fixed;\n    }\n    .pdc-mapping-table td {\n        padding: 12px 16px;\n        text-align: left;\n        vertical-align: middle;\n        border-bottom: 1px solid #e9ecef;\n        color: #495057;\n        font-size: 15px;\n    }\n    .pdc-mapping-table td:nth-child(1) {\n        width: 5%;\n    }\n    .pdc-mapping-table td:nth-child(2) {\n        width: 45%;\n    }\n    .pdc-mapping-table td:nth-child(3) {\n        width: 45%;\n    }\n    .pdc-mapping-table .field-value {\n        background-color: #f8f9fa;\n        padding: 4px 8px;\n        border-radius: 3px;\n        display: inline-block;\n        color: #0066cc;\n    }\n    .pdc-mapping-table .field-instructions {\n        color: grey;;\n        font-style: italic;\n    }\n    .pdc-mapping-table .empty-field {\n        color: #999;\n        font-style: italic;\n    }\n\n</style>\n\n<table class=\"pdc-mapping-table\">\n    <tbody>\n        <tr class=\"has-liquid-wrapper\">\n            <td>\n                {% if model.pdc_field_position %}\n                    <span>{{ model.pdc_field_position }}</span>\n                {% else %}\n                    <span>undefined position</span>\n                {% endif %}\n                {% if model.fluxx_field and model.pdc_field and model.pdc_field_position and model.pdc_application_field_instructions %}\n                    <span style=\"color: #28a745;\">✓</span>\n                {% else %}\n                    <span style=\"color: #dc3545;\">—</span>\n                {% endif %}\n            </td>\n            <td>\n                {% if model.fluxx_field %}\n                    <span class=\"field-value\">{{ model.fluxx_field }}</span>\n                    <span class=\"field-instructions\">{{ model.pdc_application_field_instructions | truncatewords: 25, '...'  }}</span>\n                {% else %}\n                    <span class=\"empty-field\">Not mapped</span>\n                {% endif %}\n            </td>\n            <td>\n                {% if model.pdc_field %}\n                    <span class=\"field-value\">{{ model.pdc_field }}</span>\n                {% else %}\n                    <span class=\"empty-field\">Not mapped</span>\n                {% endif %}\n            </td>\n        </tr>\n    </tbody>\n</table>"
+          },
+          "element_type": "component",
+          "label": "Fields Mapped From Fluxx to PDC",
+          "legacy": null,
+          "name": "embedded_card",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "read_only_states": [
+              "active"
+            ],
+            "visible_form": false,
+            "visible_show": false
+          }
+        }
+      ],
+      "label": "PDC Application Form",
+      "name": "group",
+      "styling": {
+        "alignment": "left",
+        "border_bottom_enabled": true,
+        "border_left_enabled": true,
+        "border_radius": "5",
+        "border_right_enabled": true,
+        "border_top_enabled": true,
+        "padding_bottom": "5",
+        "padding_left": "5",
+        "padding_right": "5",
+        "padding_top": "5"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+        "advanced_sort": "[]",
+        "condition": "model.opportunity.present?",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "number_of_lines": "1"
+      },
+      "element_type": "spacer",
+      "name": "spacer",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "collapsible": true,
+        "default_open": true,
+        "disable_lazy_load": "0",
+        "hide_label": "0",
+        "label": "Related Requests and Grants",
+        "reveal_if_type": "show",
+        "show_in_toc": "0"
+      },
+      "element_type": "group",
+      "elements": [
+        {
+          "config": {
+            "model_types": [
+              "GrantRequest",
+              "GrantedRequest"
+            ],
+            "show_summary": "0"
+          },
+          "element_type": "component",
+          "legacy": null,
+          "name": "relationships",
+          "styling": {
+            "alignment": "left"
+          },
+          "visibility": {
+            "advanced_filter": "1",
+            "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+            "advanced_sort": "[]",
+            "visible_form": true,
+            "visible_show": true
+          }
+        }
+      ],
+      "label": "Related Requests and Grants",
+      "name": "group",
+      "styling": {
+        "alignment": "left",
+        "border_bottom_enabled": true,
+        "border_left_enabled": true,
+        "border_radius": "5",
+        "border_right_enabled": true,
+        "border_top_enabled": true,
+        "padding_bottom": "5",
+        "padding_left": "5",
+        "padding_right": "5",
+        "padding_top": "5"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+        "advanced_sort": "[]",
+        "condition": "model.opportunity.present?"
+      }
+    },
+    {
+      "config": {
+        "label": "History"
+      },
+      "element_type": "component",
+      "label": "History",
+      "legacy": null,
+      "name": "audits",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+        "advanced_sort": "[]",
+        "visible_form": true,
+        "visible_show": true
+      }
+    },
+    {
+      "config": {
+        "allow_script": "1",
+        "text": "<img style=\"display:none\" src=\"/images/fluxx_engine/theme/default/icons/sitemap.png\" onload=\"function filterApplicationDropdown(inputObj) {\n    var base64Data = '{{ model.List_Opportunities_to_JSON }}';\n    var jsonData = atob(base64Data);\n    var data = JSON.parse(jsonData);\n\n    var detailContainer = $(inputObj).closest('.detail.area')[0]\n    var dropdown = $(detailContainer).find('select[id=machine_model_application]')[0];\n    if (!dropdown) return;\n\n    // Get the opportunity id which matches the currently selected opportunity\n    var opportunityDropdown = $(detailContainer).find('select[id=machine_model_opportunity]')[0];\n    if (!opportunityDropdown) return;\n    var selectedOption = opportunityDropdown.options[opportunityDropdown.selectedIndex];\n    var selectedText = (selectedOption.textContent || selectedOption.innerText).trim();\n    var opportunityOption = data.find(item =&gt; item.model_attribute_value.description.trim() == selectedText);\n\n    if (!opportunityOption || !opportunityOption.model_attribute_value || !opportunityOption.model_attribute_value.value) return;\n    var opportunityId = opportunityOption.model_attribute_value.value;\n\n    if (!opportunityId) return;\n\n    // Filter options\n    var options = dropdown.options;\n    if (!options) return;\n\n    for (var i = 0; i &lt; options.length; i++) {\n        var option = options[i];\n        var text = option.textContent || option.innerText;\n\n        var match = text.match(/Opp:\\s*(\\d+)/);\n        \n        if (match &amp;&amp; match.length &gt; 1 &amp;&amp; opportunityId === match[1]) {\n            option.style.display = '';\n\n        } else {\n            option.style.display = 'none';\n        }\n    }\n}; filterApplicationDropdown(this);\" alt=\"\">"
+      },
+      "element_type": "text",
+      "name": "text",
+      "styling": {
+        "alignment": "left"
+      },
+      "visibility": {
+        "advanced_filter": "1",
+        "advanced_query": "{\"group_type\":\"and\",\"conditions\":[],\"relationship_filter_model_type\":\"MacModelTypeDynPdcApplicationForm1\"}",
+        "advanced_sort": "[]",
+        "visible_form": true
+      }
+    }
+  ]
+}
